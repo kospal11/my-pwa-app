@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Category Tracker</title>
@@ -10,15 +11,13 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
 
-
   <style>
   
-	  html {
+  
+  	  html {
 	  font-size: 12px; /* or 22px */
 	}
-
-
-  
+	
 	.active-category {
 	  background-color: #ff9f1c !important;
 	  border-color: #ff9f1c !important;
@@ -863,12 +862,6 @@
 </audio>
 
 <script>
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("Service worker registered"));
-}
-
 	 let currentCategory = "";
     let editIndex = null;
 	let entries = [];
@@ -2021,7 +2014,7 @@ function deleteEntry(id) {
 	<!-- IMPORT ALL ENTRIES-->
 	
 	function triggerFileImport() {
-	  const fileInput = document.getElementById("importFile");
+	  const fileInput = document.getElementById("importEntriesFile");
 	  fileInput.click(); // Opens the file picker
 
 	  fileInput.onchange = function () {
@@ -2050,7 +2043,7 @@ function deleteEntry(id) {
 	
 	<!-- IMPORT ALL DATA (with lists)-->
 	function triggerFullImport() {
-	  const fileInput = document.getElementById("importFile");
+	  const fileInput = document.getElementById("importListsFile");
 	  fileInput.click(); // Opens the file picker
 
 	  fileInput.onchange = function () {
