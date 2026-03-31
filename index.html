@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Category Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+
+
+  <style>
+  
+	.active-category {
+	  background-color: #ff9f1c !important;
+	  border-color: #ff9f1c !important;
+	  color: #111 !important;
+	  transform: scale(1.05);
+	}
+
+    .category-btn {
+	  padding: 0.6rem 1.4rem;
+	  font-size: 1.1rem;          /* same as .btn-save */
+	  font-weight: 600;         /* same as .btn-save */
+	  border-radius: 50px;
+	  border: none;
+	  background-color: #f1f1f1;
+	  color: #333;
+	  transition: opacity 0.4s ease, transform 0.4s ease;
+	  opacity: 1;
+	  transform: translateY(10px);
+    }
+	
+	.category-btn:hover {
+	  transform: scale(1.07);
+	  box-shadow: 0 0 16px rgba(255, 159, 28, 0.9);
+    }
+	
+	.create-category-btn {
+	  padding: 0.6rem 1.4rem;
+	  font-size: 1.1rem;          /* same as .btn-save */
+	  font-weight: 600;         /* same as .btn-save */
+	  border-radius: 50px;
+	  border: none;
+	  background-color: #f1f1f1;
+	  color: #333;
+	  transition: opacity 0.4s ease, transform 0.4s ease;
+	  opacity: 1;
+	  transform: translateY(10px);
+    }
+	
+	.create-category-btn:hover {
+	  transform: scale(1.07);
+	  box-shadow: 0 0 16px rgba(255, 159, 28, 0.9);
+    }
+	
+	#listCategoryButtons {
+	  margin-bottom: 20px;   /* increase this number for more space */
+	}	
+	
+	#bottomPane {
+	  position: fixed;
+	  bottom: 0;
+	  left: 0;
+	  width: 100%;
+	  background-color: rgba(33, 37, 41, 0.85); /* dark semi-transparent */
+	  padding: 6px 12px;
+	  z-index: 900;
+	  backdrop-filter: blur(10px); /* optional: adds a frosted glass effect */
+	  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+	  display: flex;                     /* horizontal layout */
+	  justify-content: space-around;     /* evenly spaced icons */
+	  align-items: center;
+	}
+
+	#bottomPane .search-input {
+	  max-width: 55%;
+	  font-size: 0.9rem;
+	  padding: 4px 8px;
+	}
+	
+	.bottom-icon-btn {
+	  background: none;
+	  border: none;
+	  padding: 6px;
+	  margin-left: 8px;
+	  border-radius: 10px;
+	  color: white;
+	  font-size: 1.4rem;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  transition: background 0.2s ease, transform 0.2s ease;
+	}
+
+	.bottom-icon-btn:hover {
+	  background: rgba(255,255,255,0.15);
+	  transform: scale(1.15);
+	}
+	
+	.icon-btn, .action-btn {
+	  background: rgba(255,255,255,0.08);
+	  border: 1px solid rgba(255,255,255,0.15);
+	  padding: 8px;
+	  border-radius: 10px;
+	  min-width: 40px;
+	  min-height: 40px;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  color: white;
+	  font-size: 1.0rem;
+	  transition: background 0.2s ease, transform 0.15s ease;
+	}
+
+	.icon-btn:hover, .action-btn:hover {
+	  background: rgba(255,255,255,0.18);
+	  transform: scale(1.08);
+	}
+
+
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+	
+    @keyframes fadeIn {
+      from { opacity: 0;transform: translateY(10px); }
+	  to { opacity: 1; transform: translateY(0);}
+    }
+	
+	#categoryFields.visible {
+	  opacity: 1;
+	  transform: translateY(0);
+	}
+
+	.check-btn {
+	  min-width: 38px;
+	  min-height: 38px;
+	  border-radius: 10%;
+	  border: 2px solid #ccc;
+	  background-color: white;
+	  font-size: 18px;
+	  color: #335;
+	  cursor: pointer;
+	  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	}
+
+	.check-btn.checked {
+	  background-color: #28a745;
+	  border-color: #28a745;
+	  color: white;
+	}
+
+	.button-group {
+	  display: flex;
+	  flex-wrap: wrap;        /* wrap on small screens */
+	  gap: 8px;               /* spacing between buttons */
+	  margin-top: 10px;       /* space under entry text */
+	  width: 100%;
+	  justify-content: flex-start; /* align left */
+	}
+	
+	.button-group > * {
+	  flex-shrink: 0;         
+	}
+	
+	.button-group img,
+	.button-group button,
+	.button-group a {
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	}
+	
+	.button-group button,
+	.button-group a {
+	  flex-shrink: 0;
+	}
+	
+	.entry-item {
+	  background: #1e1e1e;                 /* smooth dark card */
+	  border-radius: 14px;                 /* modern rounded corners */
+	  padding: 11px 13px;                  /* comfortable spacing */
+	  margin-bottom: 8px;                 /* spacing between cards */
+	  box-shadow: 0 4px 12px rgba(0,0,0,0.35); /* soft shadow */
+	  border: 1px solid rgba(255,255,255,0.08);
+	  display: flex;
+	  flex-direction: column;
+	  gap: 10px;
+	  transition: transform 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.entry-item:active {
+	  transform: scale(0.98);              /* subtle tap feedback */
+	  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+	}
+
+
+	.entry-info {
+	  width: calc(100% - 50px);
+	  display: flex;
+	  flex-direction: column;
+	  gap: 2px;
+	  margin-bottom: 10px;
+	  font-size: 1.1rem;   /* bigger text */
+	  line-height: 1.35;   /* improves readability */
+	}
+
+
+.button-groups {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+}
+
+.button-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.left-col {
+  flex: 1;
+}
+
+.right-col {
+  flex: 1;
+  align-items: flex-end;
+}
+
+		
+	.btn-success {
+	  padding: 0.35rem 1rem;
+	  font-size: 0.95rem;
+	  border-radius: 30px;
+	  border: none;
+	  transition: transform 0.25s ease;
+	}
+
+
+	.btn-success:hover {
+	  transform: scale(1.05);      /* gentle zoom effect */
+	  background-color: #28a745;   /* darker shade on hover */
+	}
+	
+	.btn-save {
+	  padding: 0.45rem 1.2rem;
+	  font-size: 1rem;
+	  border-radius: 30px;
+	  border: none;
+	  background: linear-gradient(135deg, #ff9f1c, #ffbf69);
+	  color: #111;
+	  font-weight: 600;
+	  box-shadow: 0 0 10px rgba(255, 159, 28, 0.6);
+	  transition: transform 0.25s ease, box-shadow 0.25s ease;
+	}
+
+	.btn-save:hover {
+	  transform: scale(1.07);
+	  box-shadow: 0 0 16px rgba(255, 159, 28, 0.9);
+	}
+
+
+	
+	.btn-info {
+	  padding: 0.45rem 1.2rem;
+	  font-size: 1rem;
+	  font-weight: 600;
+	  border-radius: 30px;
+	  border: none;
+	  background: linear-gradient(135deg, #ff9f1c, #ffbf69);
+	  color: #111;
+	  box-shadow: 0 0 10px rgba(255, 159, 28, 0.6);
+	  transition: transform 0.25s ease, box-shadow 0.25s ease;
+	}
+
+	.btn-info:hover {
+	  transform: scale(1.05);
+	  box-shadow: 0 0 14px rgba(255, 159, 28, 0.8);
+	}
+
+
+	
+	a i.fa-magnifying-glass {
+	  color: #0d6efd;
+	  transition: transform 0.3s ease;
+	}
+
+	a:hover i.fa-magnifying-glass {
+	  transform: scale(1.2);}
+	 
+	.entry-links {
+	  display: flex;
+	  flex-wrap: wrap;
+	  margin-top: 0.5rem;
+	  align-items: center;
+	}
+
+	.entry-links > * {
+	  margin-right: 8px;   /* replaces gap */
+	  margin-bottom: 6px;  /* keeps spacing when wrapping */
+	}
+
+	
+	.entry-item {
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  width: 100%;
+	}
+		
+
+
+
+	.btn-icon img {
+	  width: 20px;
+	  height: 20px;
+	}
+
+	.btn-map {
+	  display: inline-flex;
+	  align-items: center;
+	  padding: 4px 10px;
+	  font-size: 12px;
+	  border-radius: 20px;
+	  background-color: #0d6efd;
+	  color: white;
+	  transition: transform 0.2s ease, background-color 0.2s ease;
+	}
+
+	.btn-map:hover {
+	  background-color: #0b5ed7;
+	  transform: scale(1.05);
+	}
+
+	
+	.slide-panel {
+	  position: fixed;
+	  bottom: -100%;
+	  left: 0;
+	  width: 100%;
+	  max-height: 80vh;
+	  background: rgba(20, 20, 20, 0.95);
+	  backdrop-filter: blur(6px);
+	  padding: 20px;
+	  border-radius: 20px 20px 0 0;
+	  transition: bottom 0.35s ease, transform 0.25s ease;
+	  z-index: 2000;
+	  color: white;
+	  overflow-y: auto; /* Only this scrolls */
+	}
+	
+	.slide-panel.active {
+	  bottom: 0;
+	}
+
+	.panel-content {
+	  max-height: 80vh;            
+	  overflow: visible;   /* No nested scrolling */
+	}
+	
+
+
+	#panelOverlay {
+	  position: fixed;
+	  top: 0;
+	  left: 0;
+	  width: 100%;
+	  height: 100%;
+	  background: rgba(0,0,0,0.4);
+	  backdrop-filter: blur(2px);
+	  z-index: 1500;
+	  display: none;          /* hidden by default */
+	}
+
+	#panelOverlay.active {
+	  display: block;
+	}
+	
+	.trailer-grid {
+	  display: grid;
+	  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	  gap: 16px;
+	  padding: 20px;
+	}
+
+	.trailer-card {
+	  background: #222;
+	  border-radius: 12px;
+	  padding: 10px;
+	  overflow: hidden;
+	}
+
+	.trailer-card img {
+	  width: 100%;
+	  border-radius: 8px;
+	}
+
+	.trailer-card iframe {
+	  width: 100%;
+	  margin-top: 8px;
+	  border-radius: 8px;
+	}
+
+	.home-button-container {
+	  position: fixed;
+	  top: calc(env(safe-area-inset-top) + 10px);   /* pushes it below the notch */
+	  right: 0;
+	  padding: 12px;
+	  z-index: 9999;
+	}
+	
+	.home-button-container .cat-home-btn {
+	  padding: 0.45rem 1.2rem;
+	  font-size: 1rem;
+	  font-weight: 600;
+	  border-radius: 30px;
+	  border: none;
+	  background: linear-gradient(135deg, #ff9f1c, #ffbf69);
+	  color: #111;
+	  box-shadow: 0 0 10px rgba(255, 159, 28, 0.6);
+	  transition: transform 0.25s ease, box-shadow 0.25s ease;
+	}
+
+	.home-button-container .cat-home-btn:hover {
+	  transform: scale(1.05);
+	  box-shadow: 0 0 14px rgba(255, 159, 28, 0.8);
+	}
+
+	
+	.list-viewer-button-container {
+	  position: fixed;
+	  top: calc(env(safe-area-inset-top) + 10px);   /* pushes it below the notch */
+	  left: 0;
+	  padding: 12px;
+	  z-index: 9999;
+	}
+	
+	.entry-header {
+	  width: 100%;
+	  display: flex;
+	  justify-content: space-between;   /* text left, check button right */
+	  align-items: center;
+	  margin-bottom: 10px;
+	}
+
+
+	body {
+	  padding-top: calc(env(safe-area-inset-top) + 90px);
+	}		
+	
+	#dataControls {
+    margin-bottom: 20px; /* keeps it above the fixed bottom pane */
+	bottom: 0;
+	left: 0;
+	padding: 15px 0;
+	z-index: 9999;
+	}
+
+	#dataControls .btn {
+		width: 180px;
+	}
+	
+	
+	/* Scrollable horizontal container */
+	.category-scroll {
+		display: flex;
+		overflow-x: auto;
+		gap: 8px;
+		padding: 10px 4px;
+		scroll-behavior: smooth;
+		-webkit-overflow-scrolling: touch;
+		white-space: nowrap;
+	}
+
+	/* Hide scrollbar (Android + iOS + desktop) */
+	.category-scroll::-webkit-scrollbar {
+		display: none;
+	}
+	.category-scroll {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	/* Pill-style buttons */
+	.category-btn {
+		padding: 0.6rem 1.4rem;
+		font-size: 1.1rem;
+		font-weight: 600;
+		border-radius: 50px;
+		border: none;
+		background-color: #f1f1f1;
+		color: #333;
+		transition: opacity 0.4s ease, transform 0.4s ease;
+		opacity: 1;
+		transform: translateY(10px);
+		flex-shrink: 0; /* prevents squeezing */
+	}
+
+	/* Hover effect */
+	.category-btn:hover {
+		transform: scale(1.07);
+		box-shadow: 0 0 16px rgba(255, 159, 28, 0.9);
+	}
+
+	.custom-modal {
+	  position: fixed;
+	  top: 0;
+	  left: 0;
+	  width: 100%;
+	  height: 100%;
+	  background: rgba(0,0,0,0.55);
+	  display: none;
+	  align-items: center;
+	  justify-content: center;
+	  z-index: 9999;
+	  color: #111
+	}
+
+	.custom-modal-content {
+	  background: #fff7e6;
+	  padding: 20px 25px;
+	  border-radius: 12px;
+	  width: 80%;
+	  max-width: 350px;
+	  text-align: center;
+	  box-shadow: 0 0 10px rgba(255, 159, 28, 0.6);
+	  animation: popIn 0.25s ease;
+	  color: #222
+	}
+
+	.custom-modal-btn {
+	  margin-top: 15px;
+	  padding: 10px 20px;
+	  background: #ff9f1c;   /* warm orange */
+	  color: #fff;
+	  border: none;
+	  border-radius: 8px;
+	  font-weight: 600;
+	  cursor: pointer;
+	  transition: 0.2s ease;
+	}
+
+	@keyframes popIn {
+	  from { transform: scale(0.85); opacity: 0; }
+	  to { transform: scale(1); opacity: 1; }
+	}
+
+	.movie-card {
+	  background: #222;
+	  padding: 15px;
+	  margin: 10px 0;
+	  border-radius: 10px;
+	  color: white;
+	}
+
+	/* Dimmed background */
+	.tools-overlay {
+	  position: fixed;
+	  inset: 0;
+	  background: rgba(0,0,0,0.35);
+	  opacity: 0;
+	  pointer-events: none;
+	  transition: opacity 0.25s ease;
+	  z-index: 998;
+	}
+
+	.tools-overlay.active {
+	  opacity: 1;
+	  pointer-events: auto;
+	}
+
+	/* Bottom sheet container */
+	.tools-panel {
+	  position: fixed;
+	  left: 0;
+	  right: 0;
+	  min-height: 200px;
+	  bottom: -100%; /* hidden below screen */
+	  background: rgba(20, 20, 20, 0.95);
+	  border-radius: 16px 16px 0 0;
+	  padding: 20px;
+	  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+	  transition: transform 0.35s cubic-bezier(.25,.8,.25,1);
+	  transform: translateY(100%);
+	  z-index: 2000;
+	}
+
+	/* Slide up */
+	.tools-panel.open {
+	  transform: translateY(0);
+	}
+
+	/* iOS-style drag handle */
+	.tools-header {
+	  width: 40px;
+	  height: 5px;
+	  background: #ccc;
+	  border-radius: 3px;
+	  margin: 0 auto 15px auto;
+	}
+
+	
+
+  </style>
+</head>
+
+<body class="bg-dark text-white">
+
+  <div class="home-button-container">
+    <button class="btn btn-success cat-home-btn" onclick="goHome()">🐈 Home</button>
+	<div id="cat" class="doodle-cat"></div>
+  </div>
+  
+  <div class="list-viewer-button-container">
+  <button class="btn btn-info" onclick="window.location.href='list-viewer.html'">
+
+  📚 View My Lists
+  </button>
+  </div>
+  
+ <div id="listsPanel" class="slide-panel">
+  <div class="panel-content">
+  <div id="listCategoryFilters" class="list-filters text-center mb-3">
+	  <button class="btn btn-outline-light category-btn" onclick="filterListPanel('All')">All</button>
+	  <button class="btn btn-outline-light category-btn" onclick="filterListPanel('Drinks')">🥤 Drinks</button>
+	  <button class="btn btn-outline-light category-btn" onclick="filterListPanel('Cinema')">🎬 Cinema</button>
+	  <button class="btn btn-outline-light category-btn" onclick="filterListPanel('Food')">🍽️ Food</button>
+	  <button class="btn btn-outline-light category-btn" onclick="filterListPanel('Other')">🧩 Other</button>
+	  <button class="btn btn-outline-light category-btn" onclick="filterListPanel('Checked')">✔️ Checked</button>
+	</div>
+    <h4 class="mb-3">📚 My Lists</h4>
+    <div id="listsContainer"></div>
+
+    <!-- <button class="btn btn-secondary mt-3" onclick="closeListsPanel()">Close</button> -->
+  </div>
+ </div>
+ 
+  <!-- Delete Warning-->
+	<div id="deleteModal" class="modal fade" tabindex="-1">
+	  <div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content bg-dark text-white">
+		  <div class="modal-body text-center">
+			<p id="deleteMessage">Are you sure?</p>
+			<button id="confirmDelete" class="btn btn-danger mt-2">Delete</button>
+			<button class="btn btn-secondary mt-2" data-bs-dismiss="modal">Cancel</button>
+		  </div>
+		</div>
+	  </div>
+	</div>
+	
+	
+	 <!-- already Warning-->
+	<div id="customModal" class="custom-modal">
+	  <div class="custom-modal-content">
+		<p id="customModalMessage"></p>
+		<button class="custom-modal-btn" onclick="closeCustomModal()">OK</button>
+	  </div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<div id="createListPanel" class="slide-panel">
+  <div class="panel-content">
+  
+  	<div id="listCategoryButtons">
+	  <button class="btn btn-outline-light create-category-btn" onclick="selectListCategory('Drinks')">🥤 Drinks</button>
+	  <button class="btn btn-outline-light create-category-btn" onclick="selectListCategory('Cinema')">🎬 Cinema</button>
+	  <button class="btn btn-outline-light create-category-btn" onclick="selectListCategory('Food')">🍽️ Food</button>
+	  <button class="btn btn-outline-light create-category-btn" onclick="selectListCategory('Other')">🧩 Other</button>
+	  
+	</div>
+
+
+   <input id="newListName" class="form-control mb-3" placeholder="List name..."> 
+
+    <button class="btn btn-success w-100 mb-2" onclick="createNewList()">Create</button>
+  </div>
+  
+
+	<div id="selectedListCategory" class="text-info fw-bold mb-2"></div>
+
+</div>
+
+<!-- addToListPanel -->
+
+<div id="addToListPanel" class="slide-panel">
+  <div class="panel-content">
+    <h4 class="mb-3">Add to List</h4>
+
+    <div id="addListButtons"></div>
+
+    <button class="btn btn-outline-light w-100 mb-2" onclick="openCreateListPanel()">➕ Create New List</button>
+  </div>
+</div>
+
+ <div id="panelOverlay"></div>
+
+  <div class="container text-center py-5">
+    <h2 class="mb-4">What's New?</h2>
+
+    <!-- Category Buttons -->
+	<div class="category-scroll">
+	  <button class="category-btn" onclick="setCategory('Drinks')">🥤 Drinks</button>
+	  <button class="category-btn" onclick="setCategory('Cinema')">🎬 Cinema</button>
+	  <button class="category-btn" onclick="setCategory('Food')">🍽️ Food</button>
+	  <button class="category-btn" onclick="setCategory('Other')">🧩 Other</button>
+	</div>
+
+
+    <!-- Category Indicator -->
+    <div id="selectedCategoryLabel" class="mb-3 fw-bold text-info"></div>
+
+    <!-- Dynamic Fields -->
+    <div id="categoryFields" class="fade-in mb-3"></div>
+
+    <!-- Action Buttons -->
+	
+    <button class="btn-save mb-3" onclick="saveData()">🐈 Save Entry</button>
+	
+	<div class="container text-center py-5">
+   <!--  <h2 class="mb-4">Or Search</h2>-->
+	<input type="text" id="combinedSearchInput" class="form-control mb-2" placeholder="Search movies or places">
+	<button class="btn btn-info mb-2" onclick="searchEverything()">🔍 Search</button>
+
+	
+	<div id="cinemaFilters">
+  
+  <select id="cinemaGenreFilter" class="btn btn-info mb-2" onchange="applyCinemaFilters()">
+    <option value="">Genre</option>
+    <option value="Action">Action</option>
+    <option value="Comedy">Comedy</option>
+    <option value="Drama">Drama</option>
+    <option value="Horror">Horror</option>
+    <option value="Romance">Romance</option>
+	<option value="Science Fiction">Science Fiction</option>
+    <!-- Add more if you want -->
+  </select>
+  
+</div>
+  
+  <div id="foodFilters" style="display:none;">
+  <select id="foodCuisineFilter" class="btn btn-info mb-2" onchange="searchCategory('Food')">
+    <option value="">Cuisine</option>
+    <option value="Italian">Italian</option>
+    <option value="Chinese">Chinese</option>
+    <option value="Japanese">Japanese</option>
+    <option value="Mexican">Mexican</option>
+    <option value="Greek">Greek</option>
+    <option value="Indian">Indian</option>
+    <option value="American">American</option>
+    <!-- Add more as needed -->
+  </select>
+</div>
+
+  
+  <div id="globalRatingFilterContainer">
+	  <select id="globalRatingFilter" class="btn btn-info mb-2" onchange="applyGlobalRatingFilter()">
+		<option value="">Rating</option>
+		<option value="1">⭐☆☆☆☆</option>
+		<option value="2">⭐⭐☆☆☆</option>
+		<option value="3">⭐⭐⭐☆☆</option>
+		<option value="4">⭐⭐⭐⭐☆</option>
+		<option value="5">⭐⭐⭐⭐⭐</option>
+	  </select>
+	</div>
+
+
+
+    <div id="searchResults" class="mt-4"></div>
+	<ul id="movieList"></ul>
+	</div>
+	
+	
+		
+	<!--<div id="dataControls" class="container text-center py-3">
+	<button class="btn btn-info mb-2" onclick="exportEntries()">Export Entries</button>
+	<button class="btn btn-info mb-2" onclick="exportAllData()">Export Lists</button>
+	
+	<input type="file" id="importFile" accept=".json" style="display: none;" />
+	<button class="btn btn-info mb-2" onclick="triggerFileImport()">Import Entries</button>
+	
+	<input type="file" id="importFile" accept=".json" style="display: none;" />
+	<button class="btn btn-info mb-2" onclick="triggerFullImport()">Import Lists</button>
+	</div> -->
+
+
+	<div id="bottomPane">
+	  <div class="container d-flex align-items-center justify-content-between">
+
+		<input type="text" id="bottomSearchInput" class="form-control search-input" placeholder="Search...">
+
+		<button class="bottom-icon-btn" onclick="searchFromBottom()">🔍</button>
+		<button class="bottom-icon-btn" onclick="openListsPanel()">📚 View</button>
+		<button class="bottom-icon-btn" onclick="openCreateListPanel()">➕ New</button>
+
+		<button class="bottom-icon-btn" onclick="toggleToolsPanel()">⌄</button>
+
+
+
+	  </div>
+	</div>
+
+	<!-- ⭐ MUST be OUTSIDE bottomPane -->
+	<div id="toolsOverlay" class="tools-overlay" onclick="toggleToolsPanel()"></div>
+
+	<div id="toolsPanel" class="slide-panel">
+	  <div class="tools-header"></div>
+
+	  <button class="btn btn-info mb-2" onclick="exportEntries()">Export Entries</button>
+	  <button class="btn btn-info mb-2" onclick="exportAllData()">Export Lists</button>
+
+	  <input type="file" id="importEntriesFile" accept=".json" style="display:none;">
+	  <button class="btn btn-info mb-2" onclick="triggerFileImport()">Import Entries</button>
+
+	  <input type="file" id="importListsFile" accept=".json" style="display:none;">
+	  <button class="btn btn-info mb-2" onclick="triggerFullImport()">Import Lists</button>
+	</div>
+
+
+
+
+	<div id="trailersGrid" class="trailer-grid"></div>
+
+	<div id="alarmPanel" style="
+	  position: fixed;
+	  bottom: 0;
+	  left: 0;
+	  right: 0;
+	  background: #222;
+	  padding: 20px;
+	  border-top: 2px solid #444;
+	  display: none;
+	  z-index: 9999;
+	">
+	  <h5>⏰ Set Alarm</h5>
+	  <input type="time" id="alarmTime" class="form-control mb-2">
+	  <button class="btn btn-success" onclick="saveAlarm()">Save Alarm</button>
+	  <button class="btn btn-secondary" onclick="closeAlarmPanel()">Cancel</button>
+	</div>
+	
+	<div id="movieList"></div>
+	<div id="loading" style="text-align:center; padding:20px; display:none;">
+	  Loading...
+	</div>
+
+
+<audio id="alarmSound">
+  <source src="alarm.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service worker registered"));
+}
+
+	 let currentCategory = "";
+    let editIndex = null;
+	let entries = [];
+	let cinemaMovies = []; // empty for now, filled later
+	let index = 0;
+	const batchSize = 30; // how many movies to load per scroll
+
+	function renderBatch() {
+	  const container = document.getElementById("movieList");
+	  const slice = cinemaMovies.slice(index, index + batchSize);
+
+	  slice.forEach(movie => {
+		const html = formatEntry(movie); // keep your icons!
+		container.insertAdjacentHTML("beforeend", html);
+	  });
+
+	  index += batchSize;
+	}
+	
+	
+	function loadCinemaInfinite() {
+	  const container = document.getElementById("movieList");
+
+	  index = 0;
+
+	  const genre = document.getElementById("cinemaGenreFilter")?.value || "";
+	  const rating = document.getElementById("globalRatingFilter")?.value || "";
+
+	  cinemaMovies = entries
+		.filter(m => m.type === "Cinema")
+		.filter(m => {
+		  const matchGenre = !genre || (m.genre && m.genre.toLowerCase().includes(genre.toLowerCase()));
+		  const matchRating = !rating ||(m.Rating && m.Rating.toString() === rating.toString());
+		  return matchGenre && matchRating;
+		})
+		.sort((a, b) => getEntryName(a).localeCompare(getEntryName(b)));
+
+	  container.innerHTML = "";
+	  renderBatch();
+
+	  document.getElementById("searchResults").innerHTML = "";
+	  document.getElementById("searchResults").style.display = "none";
+
+	  container.style.display = "block";
+	}
+
+
+	
+
+	function applyGlobalRatingFilter() {
+	  if (!currentCategory) return;
+
+	  if (currentCategory === "Cinema") {
+		loadCinemaInfinite();
+	  } else {
+		searchCategory(currentCategory);
+	  }
+	}
+
+	let listPanelFilter = "All";
+
+	let startY = 0;
+	let endY = 0;
+	let atTop = false;
+
+	const panel = document.getElementById("listsPanel");
+
+	// Detect when panel is at the top
+	panel.addEventListener("scroll", () => {
+	  atTop = panel.scrollTop === 0;
+	});
+
+	// Touch start
+	panel.addEventListener("touchstart", e => {
+	  startY = e.touches[0].clientY;
+	  endY = startY; // reset
+	});
+
+	// Mouse start
+	panel.addEventListener("mousedown", e => {
+	  startY = e.clientY;
+	  endY = startY; // reset
+	});
+
+	// Touch end
+	panel.addEventListener("touchend", e => {
+	  endY = e.changedTouches[0].clientY;
+	  handleSwipe();
+	});
+
+	// Mouse end
+	panel.addEventListener("mouseup", e => {
+	  endY = e.clientY;
+	  handleSwipe();
+	});
+	
+	panel.addEventListener("touchmove", e => {
+	  if (!atTop) return;
+
+	  const current = e.touches[0].clientY;
+	  const diff = current - startY;
+
+	  if (diff > 0) {
+		const resistance = diff * 0.3; // 30% of movement
+		panel.style.transform = `translateY(${resistance}px)`;
+	  }
+	});
+	
+	panel.style.transform = "translateY(0)";
+
+
+
+	function handleSwipe() {
+	  const diff = endY - startY;
+
+	  // Ignore tiny movements
+	  if (Math.abs(diff) < 10) return;
+
+	  // Only close if:
+	  // 1. Panel is scrolled to the top
+	  // 2. User swiped downward at least 80px
+	  if (atTop && diff > 140) {
+		closeListsPanel();
+	  }
+	}
+	
+	
+	function applyCinemaFilters() {
+	  loadCinemaInfinite();
+	}
+
+
+	function getEntryName(entry) {
+	  return (
+		entry.placeName ||
+		entry.movieName ||
+		entry.otherName ||
+		""
+	  ).toLowerCase();
+	}
+	
+	function migrateLists() {
+  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+  let changed = false;
+  
+  
+
+  for (const name in lists) {
+    const list = lists[name];
+
+    // OLD FORMAT → array
+    if (Array.isArray(list)) {
+      lists[name] = {
+        category: "Uncategorized",
+        items: list
+      };
+      changed = true;
+    }
+
+    // PARTIAL FORMAT → missing items array
+    else if (!list.items) {
+      lists[name].items = [];
+      changed = true;
+    }
+
+    // PARTIAL FORMAT → missing category
+    if (!list.category) {
+      lists[name].category = "Uncategorized";
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    localStorage.setItem("lists", JSON.stringify(lists));
+  }
+}
+
+migrateLists();
+
+	<!--Open/close panel + store selected-->
+	
+	let selectedEntryId = null;
+	
+	let newListCategory = null;
+
+	function selectListCategory(category) {
+	  newListCategory = category;
+
+	  document.getElementById("selectedListCategory").innerText =
+		"Selected category: " + category;
+
+	  // Optional: highlight selected button
+	  document.querySelectorAll("#listCategoryButtons .create-category-btn")
+		.forEach(btn => btn.classList.remove("active-category"));
+
+	  event.target.classList.add("active-category");
+	}
+	
+
+	let deleteCallback = null;
+
+	function showDeleteModal(message, callback) {
+	  document.getElementById("deleteMessage").textContent = message;
+	  deleteCallback = callback;
+
+	  const modal = new bootstrap.Modal(document.getElementById("deleteModal"));
+	  modal.show();
+
+	  document.getElementById("confirmDelete").onclick = () => {
+		callback();
+		modal.hide();
+	  };
+	}
+
+	
+	function openListsPanel() {
+	  listPanelFilter = "All";   // reset filter
+
+	  // Reset highlight
+	  document.querySelectorAll("#listCategoryFilters .category-btn")
+		.forEach(btn => btn.classList.remove("active-category"));
+
+	  // Highlight "All" by default
+	  document.querySelector("#listCategoryFilters .category-btn").classList.add("active");
+
+	  loadListsIntoPanel();
+
+	  document.getElementById("listsPanel").classList.add("active");
+	  document.getElementById("panelOverlay").classList.add("active");
+	}
+	
+	
+	
+
+	function openAddToListPanel(id) {
+	  selectedEntryId = id;
+	  loadListsIntoAddPanel();
+	  document.getElementById("addToListPanel").classList.add("active")
+	  document.getElementById("panelOverlay").classList.add("active");
+	}
+
+	function closeAddToListPanel() {
+	  document.getElementById("addToListPanel").classList.remove("active");
+	  document.getElementById("panelOverlay").classList.remove("active");
+	}
+
+
+    function setCategory(type) {
+      currentCategory = type;
+
+      // Update visual indicator
+      //document.getElementById("selectedCategoryLabel").textContent = `Selected : ${currentCategory}`;//
+
+      // Highlight selected button
+      document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.classList.remove("active-category");
+        if (btn.textContent.endsWith(type)) {
+          btn.classList.add("active-category");
+        }
+      });
+
+      renderFields();
+	  
+	    // ⭐ SHOW/HIDE FILTERS BASED ON CATEGORY
+	  document.getElementById("cinemaFilters").style.display =
+		type === "Cinema" ? "block" : "none";
+
+	  document.getElementById("foodFilters").style.display =
+		type === "Food" ? "block" : "none";
+	
+      if (type === "Cinema") {
+		loadCinemaInfinite();   // ⭐ use infinite scroll
+	  } else {
+		searchCategory(type);   // normal loading for other categories
+	  }
+    }
+
+    function searchFromBottom() {
+	  const query = document.getElementById("bottomSearchInput").value.trim().toLowerCase();
+	  document.getElementById("combinedSearchInput").value = query; // sync with main input
+	  searchEverything();
+	}
+
+
+	function renderFields() {
+	  const container = document.getElementById("categoryFields");
+	  container.classList.remove("fade-in");
+	setTimeout(() => {
+	  container.classList.add("fade-in");
+	}, 10);
+	  container.innerHTML = "";
+
+	  let html = "";
+	  if (currentCategory === "Drinks") {
+		html = `
+		  <div class="input-group mb-2">
+		  <input id="placeName" class="form-control rounded-pill border-0 mb-2" placeholder="Place name">
+		  <input id="drinkType" class="form-control rounded-pill mb-2" placeholder="Region">
+		  ${ratingDropdown()}
+		  </div>
+		`;
+	  } else if (currentCategory === "Cinema") {
+		html = `
+		  <div class="input-group mb-2">
+		  <input id="movieName" class="form-control rounded-pill mb-2" placeholder="Movie name">
+		  <input id="cinemaName" class="form-control rounded-pill mb-2" placeholder="Genre">
+		  ${ratingDropdown()}
+		  </div>
+		`;
+	  } else if (currentCategory === "Food") {
+		html = `
+		  <div class="input-group mb-2">
+		  <input id="placeName" class="form-control rounded-pill mb-2" placeholder="Place name">
+		  <input id="cuisineType" class="form-control rounded-pill mb-2" placeholder="Cuisine">
+		  ${ratingDropdown()}
+		  </div>
+
+		`;
+	  }
+	  else if (currentCategory === "Other") {
+		html = `
+		  <div class="input-group mb-2">
+		  <input id="otherName" class="form-control rounded-pill mb-2" placeholder="Other name">
+		  <input id="otherType" class="form-control rounded-pill mb-2" placeholder="Describe">
+		  ${ratingDropdown()}
+		  </div>
+
+		`;
+	  }
+
+	  container.innerHTML = html;
+
+	  // Trigger animation with a tiny delay
+	  setTimeout(() => {
+		container.classList.add("visible");
+	  }, 10);
+	}
+
+
+    function ratingDropdown() {
+      return `
+        <select id="Rating" class="form-control rounded-pill mb-2">
+          <option value="">Rate</option>
+          <option value="1">⭐☆☆☆☆</option>
+          <option value="2">⭐⭐☆☆☆</option>
+          <option value="3">⭐⭐⭐☆☆</option>
+          <option value="4">⭐⭐⭐⭐☆</option>
+          <option value="5">⭐⭐⭐⭐⭐</option>
+        </select>
+      `;
+    }
+
+	function showCustomModal(message) {
+	  document.getElementById("customModalMessage").innerText = message;
+	  document.getElementById("customModal").style.display = "flex";
+	}
+
+	function closeCustomModal() {
+	  document.getElementById("customModal").style.display = "none";
+	}
+
+	function saveData() {
+	  if (!currentCategory) return alert("Please select a category first.");
+
+	  const entry = { type: currentCategory };
+	  let isValid = true;
+
+	  // If editing, keep the same ID
+	 if (editIndex !== null) {
+		  entry.id = editIndex;
+		} else {
+		  entry.id = crypto.randomUUID();
+		}
+
+		const savedEntries = JSON.parse(localStorage.getItem("entries")) || [];
+
+		// ⭐ Preserve checked state when editing
+		if (editIndex !== null) {
+		  const original = savedEntries.find(e => e.id === editIndex);
+		  entry.checked = original ? original.checked : false;
+		} else {
+		  entry.checked = false;
+		}
+
+	  // Category-specific fields
+	  if (currentCategory === "Drinks") {
+		entry.placeName = document.getElementById("placeName").value;
+		entry.drinkType = document.getElementById("drinkType").value;
+		if (!entry.placeName || !entry.drinkType) isValid = false;
+	  } 
+	  else if (currentCategory === "Cinema") {
+		entry.movieName = document.getElementById("movieName").value;
+		entry.cinemaName = document.getElementById("cinemaName").value;
+		const genreEl = document.getElementById("movieGenre");
+		entry.genre = genreEl ? genreEl.value : entry.genre; // keep old genre if field missing
+
+		if (!entry.movieName || !entry.cinemaName) isValid = false;
+	  } 
+	  else if (currentCategory === "Food") {
+		entry.placeName = document.getElementById("placeName").value;
+		entry.cuisineType = document.getElementById("cuisineType").value;
+		if (!entry.placeName || !entry.cuisineType) isValid = false;
+	  } 
+	  else if (currentCategory === "Other") {
+		entry.otherName = document.getElementById("otherName").value;
+		entry.otherType = document.getElementById("otherType").value;
+		if (!entry.otherName || !entry.otherType) isValid = false;
+	  }
+
+	  entry.Rating = document.getElementById("Rating").value;
+
+	  if (!isValid) return alert("Please fill in all required fields before saving.");
+	  
+	  // ⭐ Duplicate detection
+	  
+	  const newName = getEntryName(entry);
+	  const duplicate = savedEntries.find(e =>
+		getEntryName(e) === newName &&
+		e.id !== entry.id
+	  );
+
+	  if (duplicate) {
+		showCustomModal(`An entry with the name "${newName}" already exists.`);
+		return;
+	  }
+
+	  // ⭐ ID‑based update
+	  if (editIndex !== null) {
+		const idx = savedEntries.findIndex(e => e.id === editIndex);
+		if (idx !== -1) {
+		  savedEntries[idx] = entry;
+		}
+		editIndex = null;
+	  } 
+	  else {
+		savedEntries.push(entry);
+	  }
+
+	  localStorage.setItem("entries", JSON.stringify(savedEntries));
+	  entries = savedEntries; // ⭐ IMPORTANT FIX
+	  document.getElementById("categoryFields").innerHTML = "";
+	  if (currentCategory === "Cinema") {
+		loadCinemaInfinite();   // reload infinite scroll
+	} else {
+		searchCategory(currentCategory);
+	}
+
+	  showCustomModal("Entry saved!");
+	}
+
+
+
+	function searchCategory(category) {
+	  document.getElementById("movieList").style.display = "none";
+	  document.getElementById("searchResults").style.display = "block";
+
+	  const selectedRating = document.getElementById("globalRatingFilter")?.value || "";
+	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  const cuisineFilter = document.getElementById("foodCuisineFilter")?.value || "";
+
+	  const normalizedCategory = category.trim().toLowerCase();
+
+	  let filtered = entries.filter(entry => {
+		const entryCat = (entry.type || entry.category || "").trim().toLowerCase();
+
+		const matchCategory = entryCat === normalizedCategory;
+		const matchRating = !selectedRating || entry.Rating === selectedRating;
+
+		const matchCuisine =
+		  normalizedCategory !== "food" ||
+		  !cuisineFilter ||
+		  (entry.cuisineType &&
+		   entry.cuisineType.toLowerCase().includes(cuisineFilter.toLowerCase()));
+
+		return matchCategory && matchRating && matchCuisine;
+	  });
+
+	  filtered = filtered.sort((a, b) =>
+		getEntryName(a).localeCompare(getEntryName(b))
+	  );
+
+	  let output = filtered.length
+		? filtered.map(entry => formatEntry(entry)).join("")
+		: `<p class="text-muted">No entries found for ${category}${selectedRating ? ` with rating ${selectedRating}` : ""}.</p>`;
+
+	  document.getElementById("searchResults").innerHTML =
+		`<ul class="list-group">${output}</ul>`;
+	}
+
+
+
+
+
+	function loadListsIntoPanel() {
+	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+	  const container = document.getElementById("listsContainer");
+
+	  if (Object.keys(lists).length === 0) {
+		container.innerHTML = `<p class="text-muted">No lists found.</p>`;
+		return;
+	  }
+
+	  const categoryIcons = { 
+		Drinks: "🥤", 
+		Cinema: "🎬", 
+		Food: "🍽️",
+		Other: "🧩",
+		Uncategorized: "📦"
+	  };
+
+	  let html = "";
+
+	  for (const listName in lists) {
+		const list = lists[listName];
+
+		// Auto-fix missing category
+		const category = list.category || "Uncategorized";
+
+		// Get icon
+		const icon = categoryIcons[category] || "📦";
+
+		// Apply filter
+		if (listPanelFilter !== "All" && category !== listPanelFilter) {
+		  continue;
+		}
+
+		html += `
+		  <div class="mb-3 p-2 list-item" 
+			   style="background:#333; border-radius:10px; cursor:pointer;"
+			   onclick="openList('${listName}')">
+			<h5 class="mb-1">${icon}${listName}</h5>
+
+		  </div>
+		`;
+	  }
+
+	  container.innerHTML = html;
+	}
+
+	
+	
+	function openListsPanel() {
+	  listPanelFilter = "All";   // reset filter
+
+	  // Reset highlight
+	  document.querySelectorAll("#listCategoryFilters .category-btn")
+		.forEach(btn => btn.classList.remove("active-category"));
+
+	  // Highlight "All" by default
+	  document.querySelector("#listCategoryFilters .category-btn").classList.add("active");
+
+	  loadListsIntoPanel();
+
+	  document.getElementById("listsPanel").classList.add("active");
+	  document.getElementById("panelOverlay").classList.add("active");
+	  // 🔥 Prevent background scrolling
+	  document.body.style.overflow = "hidden";
+	}
+	
+	function toggleToolsPanel() {
+	  const panel = document.getElementById("toolsPanel");
+	  const overlay = document.getElementById("toolsOverlay");
+
+	  const isOpen = panel.classList.toggle("active");
+	  overlay.classList.toggle("active", isOpen);
+	}
+
+
+	
+
+	function filterListPanel(category) {
+	  listPanelFilter = category;
+
+	  // Highlight selected button
+	  document.querySelectorAll("#listCategoryFilters .category-btn")
+		.forEach(btn => btn.classList.remove("active-category"));
+
+	  // Add highlight to clicked button
+	  event.target.classList.add("active-category");
+
+	  loadListsIntoPanel();
+	}
+
+
+	function closeListsPanel() {
+	  document.getElementById("listsPanel").classList.remove("active");
+	  document.getElementById("panelOverlay").classList.remove("active");
+	  // Restore scrolling
+	  document.body.style.overflow = "";
+	  
+	}
+	
+	function openList(listName) {
+	  localStorage.setItem("currentList", listName);
+	  window.location.href = "list-viewer.html";
+	}
+
+
+
+	function openCreateListPanel() {
+	  document.getElementById("createListPanel").classList.add("active");
+	  document.getElementById("panelOverlay").classList.add("active");
+	}
+
+	function closeCreateListPanel() {
+	  document.getElementById("createListPanel").classList.remove("active");
+	  document.getElementById("panelOverlay").classList.remove("active");
+	}
+
+	function createNewList() {
+	  const name = document.getElementById("newListName").value.trim();
+	  if (!name) {
+		alert("Please enter a list name.");
+		return;
+	  }
+
+	  if (!newListCategory) {
+		alert("Please select a category.");
+		return;
+	  }
+
+	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+
+	  if (lists[name]) {
+		alert("A list with this name already exists.");
+		return;
+	  }
+
+	  lists[name] = {
+		category: newListCategory,
+		items: []
+	  };
+
+	  localStorage.setItem("lists", JSON.stringify(lists));
+
+	  document.getElementById("newListName").value = "";
+	  newListCategory = null;
+	  document.getElementById("selectedListCategory").innerText = "";
+
+	  closeCreateListPanel();
+	  loadListsIntoAddPanel();
+	}
+	
+	function ensureCheckedListExists() {
+	  let lists = JSON.parse(localStorage.getItem("lists")) || {};
+
+	  if (!lists["Checked"]) {
+		lists["Checked"] = {
+		  category: "Checked",
+		  items: []
+		};
+		localStorage.setItem("lists", JSON.stringify(lists));
+	  }
+	}
+
+	ensureCheckedListExists();
+
+	function saveToCheckedList(entry) {
+	  let lists = JSON.parse(localStorage.getItem("lists")) || {};
+
+	  if (!lists["Checked"]) {
+		lists["Checked"] = {
+		  category: "Checked",
+		  items: []
+		};
+	  }
+
+	  lists["Checked"].items.push(entry);
+
+	  localStorage.setItem("lists", JSON.stringify(lists));
+	}
+
+
+
+	
+	document.getElementById("panelOverlay").addEventListener("click", () => {
+	  closeListsPanel();
+	  closeCreateListPanel();
+	  closeAddToListPanel()
+	  closeCustomModal();
+	});
+
+	function loadListsIntoAddPanel() {
+	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+	  const container = document.getElementById("addListButtons");
+
+	  if (Object.keys(lists).length === 0) {
+		container.innerHTML = `<p class="text-muted">No lists yet.</p>`;
+		return;
+	  }
+
+	  const categoryIcons = {
+		Drinks: "🥤",
+		Cinema: "🎬",
+		Food: "🍽️",
+		Other: "🧩",
+		Checked : "✔️",
+		Uncategorized: "📦"
+	  };
+
+	  container.innerHTML = Object.keys(lists).map(listName => {
+		const list = lists[listName];
+
+		// Determine icon
+		const icon =
+		  list.icon ||
+		  categoryIcons[list.category] ||
+		  "📦";
+
+		return `
+		  <button class="btn btn-info w-100 mb-2" onclick="addToList('${listName}')">
+			${icon} ${listName}
+		  </button>
+		`;
+	  }).join("");
+	}
+
+
+	function addToList(listName) {
+	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  const entry = entries.find(e => e.id === selectedEntryId);
+	  if (!entry) return;
+
+	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+	  let list = lists[listName];
+
+	  // If list doesn't exist → create in NEW format
+	  if (!list) {
+		list = {
+		  category: "Uncategorized",
+		  icon :categoryIcons["Uncategorized"],
+		  items: []
+		};
+		lists[listName] = list;
+	  }
+
+	  // If list is OLD format (array) → convert it
+	  if (Array.isArray(list)) {
+		list = {
+		  category: "Uncategorized",
+		  icon :categoryIcons["Uncategorized"],
+		  items: list
+		};
+		lists[listName] = list;
+	  }
+
+	  // Always push into items
+	  list.items.push(entry);
+
+	  localStorage.setItem("lists", JSON.stringify(lists));
+	  closeAddToListPanel();
+	}
+
+
+
+    function formatEntry(entry) {
+	
+	const isListView = localStorage.getItem("currentList") !== null;
+	const checkHandler = isListView ? "toggleCheckList(this)" : "toggleCheck(this)";
+
+      let content = "";
+	  let googleMapQuery = "";
+	  let googleMap = "";
+      if (entry.type === "Drinks") {
+		const query = `${entry.placeName}`;
+		googleSearchLink = createGoogleLink(query);
+		googleMapsLink = createGoogleMapsLink(entry.placeName);
+        content = `
+		<div class="entry-info">
+		<div>🥤: ${entry.placeName}</div>
+		<div>Region: ${entry.drinkType}</div>
+		<div>⭐ ${entry.Rating || "N/A"}</div>
+		</div>
+		<div class="entry-links">
+		</div>
+		`;
+      } else if (entry.type === "Cinema") {
+		const query = `${entry.movieName}`;
+		googleSearchLink = createGoogleLink(query);
+		googleMapsLink = createGoogleMapsLink(entry.movieName);
+        content = `
+		<div class="entry-info">
+		<div> 🎬: ${entry.movieName} </div>
+		<div> Cinema: ${entry.cinemaName} </div>  
+		<div>⭐ ${entry.Rating || "N/A"}</div>
+		</div>
+		<div class="entry-links">
+		</div>
+		`;
+      } else if (entry.type === "Food") {
+	    const query = `${entry.placeName}`;
+		googleSearchLink = createGoogleLink(query);
+		googleMapsLink = createGoogleMapsLink(entry.placeName);
+        content = `
+		<div class="entry-info">
+		<div>🍽️ Place: ${entry.placeName}</div>
+		<div>Cuisine: ${entry.cuisineType}</div>
+		<div>⭐ ${entry.Rating || "N/A"}</div>
+		</div>
+		<div class="entry-links">		
+		</div>`;
+      } else if (entry.type === "Other") {
+	    const query = `${entry.otherName}`;
+		googleSearchLink = createGoogleLink(query);
+		googleMapsLink = createGoogleMapsLink(entry.placeName);
+        content = `
+		<div class="entry-info">
+		<div>🧩 Other: ${entry.otherName}</div>
+		<div>Type: ${entry.otherType}</div>
+		<div>⭐ ${entry.Rating || "N/A"}</div>
+		</div>
+		<div class="entry-links">		
+		</div>`;
+      }
+	  const entryId = `entry-${entry.id}`;
+	  const entrySummary = buildEntrySummary(entry);
+	 return `
+    <li class="list-group-item bg-dark text-white entry-item">
+
+     <div class="entry-header">
+		${content}
+
+	  <button class="check-btn action-btn ${entry.checked ? 'checked' : ''}"
+			  data-id="${entry.id}"
+			  onclick="toggleCheck(this)">
+		<i class="fa-solid ${entry.checked ? 'fa-check-circle' : 'fa-check'}"></i>
+	  </button>
+	</div>
+
+
+      <div class="button-groups">
+
+	  <a href="${googleSearchLink}" target="_blank" class="icon-btn">
+		<img src="https://www.google.com/favicon.ico" style="width:20px; height:20px;">
+	  </a>
+
+	  <a href="${googleMapsLink}" target="_blank" class="icon-btn">📍 Map</a>
+
+		<button id="${entryId}-share"
+		class="icon-btn"
+		onclick="shareEntry('${entrySummary.replace(/'/g, "\\'")}')">🔗 </button>
+
+		<button class="icon-btn" onclick="editEntry('${entry.id}')">
+		  <i class="fa-solid fa-pen"></i>
+		</button>
+
+		<button class="icon-btn"
+          onclick="openAlarmPicker('${entry.id}')">⏰</button>
+
+		  
+		<button class="icon-btn" onclick="deleteEntry('${entry.id}')">
+		  <i class="fa-solid fa-trash"></i>
+		</button>
+
+
+	  <button class="icon-btn"
+		onclick="openAddToListPanel('${entry.id}')">➕</button>
+
+
+	</div>
+
+    </li>
+  `;
+}
+	 
+
+	
+	
+	function editEntry(id) {
+	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  const entry = entries.find(e => e.id === id);
+	  if (!entry) return;
+
+	  editIndex = id;
+
+	  currentCategory = entry.type;
+	  setCategory(entry.type);
+
+	  window.scrollTo({ top: 0, behavior: "smooth" });
+
+	  setTimeout(() => populateFields(entry), 100);
+	}
+
+	
+	function syncListsWithEntries(id, checked) {
+	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+
+	  for (const listName in lists) {
+		const list = lists[listName];
+		const item = list.items.find(e => e.id == id);
+		if (item) item.checked = checked;
+	  }
+
+	  localStorage.setItem("lists", JSON.stringify(lists));
+	}
+
+		
+	function toggleCheck(button) {
+	  const id = button.dataset.id;
+
+	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  const entry = entries.find(e => e.id == id);
+	  if (!entry) return;
+
+	  const isChecked = !entry.checked;
+	  entry.checked = isChecked;
+
+	  localStorage.setItem("entries", JSON.stringify(entries));
+
+	  // ⭐ Sync lists
+	  syncListsWithEntries(id, isChecked);
+
+	  // Update visual
+	  const iconEl = button.querySelector("i");
+	  button.classList.toggle("checked", isChecked);
+
+	  if (isChecked) {
+		iconEl.classList.remove("fa-circle");
+		iconEl.classList.add("fa-check-circle");
+	  } else {
+		iconEl.classList.remove("fa-check-circle");
+		iconEl.classList.add("fa-circle");
+	  }
+
+	  // Refresh list view if inside list
+	  const selected = localStorage.getItem("currentList");
+	  if (selected) loadLists();
+	}
+
+
+
+
+    function populateFields(entry) {
+      if (entry.placeName) document.getElementById("placeName").value = entry.placeName;
+      if (entry.drinkType) document.getElementById("drinkType").value = entry.drinkType;
+      if (entry.movieName) document.getElementById("movieName").value = entry.movieName;
+      if (entry.cinemaName) document.getElementById("cinemaName").value = entry.cinemaName;
+      if (entry.cuisineType) document.getElementById("cuisineType").value = entry.cuisineType;
+	  if (entry.otherName) document.getElementById("otherName").value = entry.otherName;
+	  if (entry.otherType) document.getElementById("otherType").value = entry.otherType;
+      if (entry.Rating) document.getElementById("Rating").value = entry.Rating;
+    }
+
+function deleteEntry(id) {
+  showDeleteModal("Delete this entry?", () => {
+    const entries = JSON.parse(localStorage.getItem("entries")) || [];
+    const index = entries.findIndex(e => e.id === id);
+
+    if (index !== -1) {
+      entries.splice(index, 1);
+      localStorage.setItem("entries", JSON.stringify(entries));
+    }
+
+    if (currentCategory === "Cinema") {
+		loadCinemaInfinite();
+	} else {
+		searchCategory(currentCategory);
+	}
+	;
+  });
+}
+
+	
+	function highlightMatch(text, query) {
+	  if (!query) return text;
+	  const regex = new RegExp(`(${query})`, 'gi');
+	  return text.replace(regex, '<mark>$1</mark>');
+	}
+
+	/* function searchEverything() {
+	  const query = document.getElementById("combinedSearchInput").value.trim().toLowerCase();
+	  const savedEntries = JSON.parse(localStorage.getItem("entries")) || [];
+	  
+
+	  const filtered = savedEntries
+		.map((entry, index) => ({ ...entry, index }))
+		.filter(entry =>
+		  Object.values(entry).some(value => {
+			if (typeof value === "string") return value.toLowerCase().includes(query);
+			if (typeof value === "number") return value.toString().includes(query);
+			return false;
+		  })
+		);
+
+	  let output = `<h3>🔎 Results matching "${query}":</h3><ul class="list-group">`;
+
+	  if (filtered.length === 0) {
+		output += `<li class="list-group-item text-muted">No entries matched your search.</li>`;
+	  } else {
+		filtered.forEach(entry => {
+		  let label = "";
+		  let label2 = "";
+		  let label3 = "";
+
+		  switch (entry.type) {
+			case "Cinema":
+			  const movieGoogle = createGoogleLink(entry.movieName);
+			  const movieMap = createGoogleMapsLink(entry.movieName);
+
+			  label = `🎬 ${highlightMatch(entry.movieName, query)} at ${highlightMatch(entry.cinemaName, query)}`;
+			  label2 = ` <a href="${movieGoogle}" target="_blank"><img src="https://www.google.com/favicon.ico" style="width:20px;height:20px;margin-left:6px;"></a>`;
+			  label3 = `<a href="${movieMap}" target="_blank"><button style="margin-left:8px;padding:4px 8px;font-size:12px;">📍 Maps</button></a>`;
+			  break;
+
+			case "Drinks":
+			  label = `🥤 ${highlightMatch(entry.drinkType, query)} at ${highlightMatch(entry.placeName, query)}`;
+			  break;
+
+			case "Food":
+			  const foodGoogle = createGoogleLink(entry.placeName);
+			  const foodMap = createGoogleMapsLink(entry.placeName);
+
+			  label = `🍽️ ${highlightMatch(entry.placeName, query)} (${highlightMatch(entry.cuisineType, query)})`;
+			  label2 = ` <a href="${foodGoogle}" target="_blank"><img src="https://www.google.com/favicon.ico" style="width:20px;height:20px;margin-left:6px;"></a>`;
+			  label3 = `<a href="${foodMap}" target="_blank"><button style="margin-left:8px;padding:4px 8px;font-size:12px;">📍 Maps</button></a>`;
+			  break;
+			  
+			case "Other":
+			  const otherGoogle = createGoogleLink(entry.otherName);
+			  const otherMap = createGoogleMapsLink(entry.otherName);
+
+			  label = `🧩 ${highlightMatch(entry.otherName, query)} (${highlightMatch(entry.otherType, query)})`;
+			  label2 = ` <a href="${otherGoogle}" target="_blank"><img src="https://www.google.com/favicon.ico" style="width:20px;height:20px;margin-left:6px;"></a>`;
+			  label3 = `<a href="${otherMap}" target="_blank"><button style="margin-left:8px;padding:4px 8px;font-size:12px;">📍 Maps</button></a>`;
+			  break;
+		  }
+
+		  const plusButton = `
+			<button class="btn btn-sm btn-outline-light ms-2"
+					onclick="openAddToListPanel('${entry.id}')">➕</button>
+					
+					
+		  `;
+		  const alarmButton = `
+			  <button class="btn btn-sm btn-outline-warning ms-2"
+					  onclick="openAlarmPicker(${entry.id})">⏰</button>
+			`;
+
+
+		  output += `
+			<li class="list-group-item bg-dark text-white entry-item">
+			  <span>${label} ${label2} ${label3}</span>
+			  <span>${plusButton} ${alarmButton}</span>
+			</li>
+		  `;
+		});
+	  }
+
+	  output += "</ul>";
+	  document.getElementById("searchResults").innerHTML = output;
+	} */
+	
+	
+	function searchEverything() {
+	  const query = document.getElementById("combinedSearchInput").value.trim().toLowerCase();
+	  const savedEntries = JSON.parse(localStorage.getItem("entries")) || [];
+	  
+	  // ⭐ If nothing typed, show a warning and stop
+	  if (!query) {
+		showCustomModal("Please type something to search.");
+		return;
+	  }
+	  
+	 // ⭐ FIX: Cinema must switch to normal search mode
+	  if (currentCategory === "Cinema") {
+		document.getElementById("movieList").style.display = "none";
+		document.getElementById("searchResults").style.display = "block";
+	  }
+
+	  let filtered = savedEntries
+		.map((entry, index) => ({ ...entry, index }))
+		.filter(entry =>
+		  Object.values(entry).some(value => {
+			if (typeof value === "string") return value.toLowerCase().includes(query);
+			if (typeof value === "number") return value.toString().includes(query);
+			return false;
+		  })
+		);
+
+	  // ⭐ sort the actual results you render
+	  filtered = filtered.sort((a, b) => getEntryName(a).localeCompare(getEntryName(b)));
+
+	  let output = `<h3>🔎 Results matching "${query}":</h3><ul class="list-group">`;
+
+	  if (filtered.length === 0) {
+		output += `<li class="list-group-item text-muted">No entries matched your search.</li>`;
+	  } else {
+		filtered.forEach(entry => {
+		  output += formatEntry(entry);
+		});
+	  }
+
+	  output += "</ul>";
+	  document.getElementById("searchResults").innerHTML = output;
+	}
+
+
+
+	
+	function createGoogleLink(query) {
+	  const encoded = encodeURIComponent(query);
+	  return `https://www.google.com/search?q=${encoded}`;
+	}
+	
+	function createGoogleMapsLink(location) {
+	  const baseUrl = "https://www.google.com/maps/search/?api=1&query=";
+	  return `${baseUrl}${encodeURIComponent(location)}`;
+	}
+	
+	<!-- EXPORT ALL entries)-->
+	function exportEntries() {
+	  const entries = localStorage.getItem("entries");
+	  if (!entries) {
+		alert("No entries found to export.");
+		return;
+	  }
+
+	  const blob = new Blob([entries], { type: "application/json" });
+	  const url = URL.createObjectURL(blob);
+
+	  const link = document.createElement("a");
+	  link.href = url;
+	  link.download = "entries.json";
+	  document.body.appendChild(link);
+	  link.click();
+	  document.body.removeChild(link);
+	}
+	
+	<!-- EXPORT ALL DATA (with lists)-->
+	function exportAllData() {
+	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+
+	  const fullExport = {
+		entries: entries,
+		lists: lists
+	  };
+
+	  const blob = new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" });
+	  const url = URL.createObjectURL(blob);
+
+	  const link = document.createElement("a");
+	  link.href = url;
+	  link.download = "full-export.json";
+	  document.body.appendChild(link);
+	  link.click();
+	  document.body.removeChild(link);
+	}
+
+	<!-- IMPORT ALL ENTRIES-->
+	
+	function triggerFileImport() {
+	  const fileInput = document.getElementById("importFile");
+	  fileInput.click(); // Opens the file picker
+
+	  fileInput.onchange = function () {
+		const file = fileInput.files[0];
+		if (!file) {
+		  alert("Please choose a file first.");
+		  return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = function (e) {
+		  try {
+			const imported = JSON.parse(e.target.result);
+			localStorage.setItem("entries", JSON.stringify(imported));
+			alert("Entries imported successfully!");
+			searchCategory(); // Optional refresh
+		  } catch (err) {
+			alert("Invalid JSON file.");
+		  }
+		};
+
+		reader.readAsText(file);
+	  };
+	}
+	
+	
+	<!-- IMPORT ALL DATA (with lists)-->
+	function triggerFullImport() {
+	  const fileInput = document.getElementById("importFile");
+	  fileInput.click(); // Opens the file picker
+
+	  fileInput.onchange = function () {
+		const file = fileInput.files[0];
+		if (!file) {
+		  alert("Please choose a file first.");
+		  return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = function (e) {
+		  try {
+			const data = JSON.parse(e.target.result);
+
+			if (!data.entries || !data.lists) {
+			  alert("Invalid full export file.");
+			  return;
+			}
+
+			localStorage.setItem("entries", JSON.stringify(data.entries));
+			localStorage.setItem("lists", JSON.stringify(data.lists));
+
+			alert("Full data imported successfully!");
+
+			// Optional refresh
+			searchCategory();
+
+		  } catch (err) {
+			alert("Invalid JSON file.");
+		  }
+		};
+
+		reader.readAsText(file);
+	  };
+	}
+
+
+	
+	function shareEntry(text) {
+	  if (navigator.share) {
+		  navigator.share({
+		  title: "Shared Entry",
+		  text: text,
+		  url: location.href // optional, can be omitted if you don't want to share a link
+		})
+		.then(() => console.log("Entry shared!"))
+		.catch(error => console.error("Share failed:", error));
+	  } else {
+		// Fallback: copy to clipboard
+		navigator.clipboard.writeText(text)
+		  .then(() => alert("Entry copied to clipboard!"))
+		  .catch(() => alert("Failed to copy entry."));
+	  }
+	}
+	
+	function buildEntrySummary(entry) {
+	  if (entry.type === "Cinema") {
+		return `🎬 Movie: ${entry.movieName}, Cinema: ${entry.cinemaName}, ⭐: ${entry.Rating || 'N/A'}`;
+	  } else if (entry.type === "Drinks") {
+		return `🥤 Place: ${entry.placeName}, Region: ${entry.drinkType}, ⭐: ${entry.Rating || 'N/A'}`;
+	  } else if (entry.type === "Food") {
+		return `🍽️ Place: ${entry.placeName}, Cuisine: ${entry.cuisineType}, ⭐: ${entry.Rating || 'N/A'}`;
+	  } else if (entry.type === "Other") {
+		return `🧩 Other: ${entry.otherName}, Describe: ${entry.otherType}, ⭐: ${entry.Rating || 'N/A'}`;
+	  }
+	}
+
+
+
+
+	
+	async function getUpcomingMovies() {
+	  const res = await fetch(
+		`https://api.themoviedb.org/3/movie/upcoming?api_key=YOUR_KEY&language=en-US&page=1`
+	  );
+	  const data = await res.json();
+	  return data.results;
+	}
+
+	async function getTrailer(movieId) {
+	  const res = await fetch(
+		`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=YOUR_KEY&language=en-US`
+	  );
+	  const data = await res.json();
+	  return data.results.find(
+		v => v.type === "Trailer" && v.site === "YouTube"
+	  );
+	}
+	
+	async function showTrailerGrid() {
+	  const movies = await getUpcomingMovies();
+	  const container = document.getElementById("trailersGrid");
+
+	  for (const movie of movies) {
+		const trailer = await getTrailer(movie.id);
+		if (!trailer) continue;
+
+		container.innerHTML += `
+		  <div class="trailer-card">
+			<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">
+			<h5>${movie.title}</h5>
+			<iframe
+			  src="https://www.youtube.com/embed/${trailer.key}"
+			  frameborder="0"
+			  allowfullscreen>
+			</iframe>
+		  </div>
+		`;
+	  }
+	}
+
+	showTrailerGrid()
+	
+		let alarmEntryIndex = null;
+
+	function openAlarmPicker(id) {
+	  alarmEntryId = id;
+	  document.getElementById("alarmPanel").style.display = "block";
+	}
+
+	function closeAlarmPanel() {
+	  document.getElementById("alarmPanel").style.display = "none";
+	}
+
+	function saveAlarm() {
+	  const time = document.getElementById("alarmTime").value;
+	    if (!time) {
+		closeAlarmPanel();
+		return;
+	  }
+
+	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  const entry = entries.find(e => e.id == alarmEntryId);
+	    if (!entry) {
+		closeAlarmPanel();
+		return;
+	  }
+
+	  entry.alarm = time;
+	  localStorage.setItem("entries", JSON.stringify(entries));
+
+	  scheduleAlarm(entry);
+	  closeAlarmPanel();
+	}
+
+
+	function scheduleAlarm(entry) {
+	  if (!entry.alarm) return;
+
+	  const now = new Date();
+	  const [hours, minutes] = entry.alarm.split(":").map(Number);
+
+	  const alarmTime = new Date();
+	  alarmTime.setHours(hours, minutes, 0, 0);
+
+	  if (alarmTime < now) {
+		alarmTime.setDate(alarmTime.getDate() + 1);
+	  }
+
+	  const msUntilAlarm = alarmTime - now;
+
+	  setTimeout(() => {
+		showAlarmNotification(entry);
+	  }, msUntilAlarm);
+	}
+
+	function showAlarmNotification(entry) {
+	  // Ask permission if needed
+	  if (Notification.permission !== "granted") {
+		Notification.requestPermission();
+	  }
+
+	  // Create the notification
+	  const notification = new Notification("⏰ Alarm", {
+		body: `Reminder for: ${entry.placeName || entry.movieName}`,
+		icon: "alarm-icon.png" // use your own icon
+	  });
+
+	  // Play sound
+	  const sound = document.getElementById("alarmSound");
+	  sound.currentTime = 0;
+	  sound.play().catch(() => {
+		console.log("Autoplay blocked — user must interact with the page first.");
+	  });
+	}
+
+	document.addEventListener("click", () => {
+	  if (Notification.permission !== "granted") {
+		Notification.requestPermission();
+	  }
+	}, { once: true });
+
+
+	window.addEventListener("load", () => {
+	  entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  entries.forEach(entry => scheduleAlarm(entry));
+	  if (Notification.permission !== "granted") {
+	  Notification.requestPermission();
+	}
+	});
+	
+	function goHome() {
+	  document.body.classList.add('fade-out'); // Assuming you have a fade-out class in CSS
+	  setTimeout(() => {
+		window.location.href = 'index.html';
+	  }, 300);
+	}
+	
+	window.addEventListener("scroll", () => {
+	  const scrollPos = window.innerHeight + window.scrollY;
+	  const bottom = document.body.offsetHeight - 300;
+
+	  if (scrollPos >= bottom) {
+		renderBatch();
+	  }
+	});
+
+
+
+  </script>
+</body>
+</html>
