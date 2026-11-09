@@ -9,7 +9,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css?v=1">
+  <link rel="stylesheet" href="app.css?v=48">
+  <script src="theme.js"></script>
+  <script src="share.js"></script>
+  <script src="photos.js"></script>
+  <script src="lookup.js"></script>
+  <script src="swipe-close.js"></script>
+  <script src="photo-ui.js"></script>
+  <script src="sendcard.js"></script>
   <meta name="theme-color" content="#0F1013">
 </head>
 
@@ -42,7 +49,8 @@
         <h1 class="screen-title" id="listTitle">My lists</h1>
         <div class="screen-sub" id="listSub"></div>
       </div>
-      <button id="newListBtn" class="btn-accent" style="height:44px;padding:0 18px;" onclick="window.location.href='indexnew.html#newlist'">
+      <button id="shareListBtn" class="btn-accent" style="display:none;height:44px;padding:0 18px;" onclick="shareList()">Share</button>
+      <button id="newListBtn" class="btn-accent" style="height:44px;padding:0 18px;" onclick="window.location.href='index.html#newlist'">
         <svg class="ic" style="width:18px;height:18px"><use href="#i-plus"/></svg> New
       </button>
     </div>
@@ -63,9 +71,9 @@
   <!-- Bottom tab bar (same as the home page) -->
   <nav class="tabbar" aria-label="Main">
     <button class="tab" onclick="goHome()"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
-    <button class="tab" onclick="window.location.href='indexnew.html#search'"><svg class="ic"><use href="#i-search"/></svg><span>Search</span></button>
+    <button class="tab" onclick="window.location.href='index.html#search'"><svg class="ic"><use href="#i-search"/></svg><span>Search</span></button>
     <button class="tab active" onclick="showAllLists()"><svg class="ic"><use href="#i-list"/></svg><span>My lists</span></button>
-    <button class="tab" onclick="window.location.href='indexnew.html#more'"><svg class="ic"><use href="#i-more"/></svg><span>More</span></button>
+    <button class="tab" onclick="window.location.href='index.html#more'"><svg class="ic"><use href="#i-more"/></svg><span>More</span></button>
   </nav>
 
   <!-- Delete confirmation -->
@@ -168,7 +176,7 @@
 	  item.checked = isChecked;
 
 	  const entry = entries.find(e => e.id == id);
-	  if (entry) entry.checked = isChecked;
+	  if (entry) { entry.checked = isChecked; if (isChecked) entry.checkedAt = new Date().toISOString(); else delete entry.checkedAt; }
 
 	  localStorage.setItem("lists", JSON.stringify(lists));
 	  localStorage.setItem("entries", JSON.stringify(entries));
@@ -202,8 +210,9 @@
 
 		content = `
 		  <div class="entry-info">
-			<div>🎬 ${escHtml(entry.movieName)}</div>
-			<div>Cinema: ${escHtml(entry.cinemaName)}</div>
+			<div>${Share.isTV(entry) ? "📺" : "🎬"} ${escHtml(entry.movieName)}</div>
+			<div>${Share.isTV(entry) ? "TV series" : "Cinema"}: ${escHtml(entry.cinemaName)}${entry.year ? " · " + escHtml(entry.year) : ""}</div>
+			${Share.isTV(entry) ? `<div class="entry-meta"><span class="tv-pill tv-${Share.tvStatus(entry)}">${Share.TV_STATUS[Share.tvStatus(entry)]}</span>${Share.tvProgress(entry) ? " <b>" + escHtml(Share.tvProgress(entry)) + "</b>" : ""}</div>` : ""}
 			<div>⭐ ${escHtml(entry.Rating || "N/A")}</div>
 		  </div>
 		`;
@@ -241,6 +250,7 @@
 		<li class="list-group-item bg-dark text-white entry-item">
 
 		  <div class="entry-header">
+			${Photos.thumbHtml(entry, '', "PhotoUI.openEntry('" + escHtml(entry.id) + "')")}
 			${content}
 
 			<button class="check-btn action-btn ${entry.checked ? 'checked' : ''}"
@@ -259,9 +269,11 @@
 
 			<a href="${googleMapsLink}" target="_blank" rel="noopener" class="icon-btn">📍 Map</a>
 
+			<button class="icon-btn" aria-label="Photos" onclick="PhotoUI.openEntry('${escHtml(entry.id)}')">📷</button>
+
 			<button class="icon-btn" aria-label="Share"
 					data-share="${escHtml(entrySummary)}"
-					onclick="shareEntry(this.dataset.share)">🔗</button>
+					onclick="SendCard.openSheet('e', '${escHtml(String(entry.id))}', this.dataset.label)" data-label="${escHtml(Share.nameOf(entry))}">🔗</button>
 
 			<button class="icon-btn" aria-label="Remove from list"
 					onclick="deleteItem(localStorage.getItem('currentList'), ${Number(entry.index)})">
@@ -277,6 +289,7 @@
 
 	function buildEntrySummary(entry) {
 	  if (entry.type === "Cinema") {
+		if (Share.isTV(entry)) return `📺 Series: ${entry.movieName}${Share.tvProgress(entry) ? " (" + Share.tvProgress(entry) + ")" : ""}, Genre: ${entry.cinemaName}, ⭐: ${entry.Rating || 'N/A'}`;
 		return `🎬 Movie: ${entry.movieName}, Cinema: ${entry.cinemaName}, ⭐: ${entry.Rating || 'N/A'}`;
 	  } else if (entry.type === "Drinks") {
 		return `🥤 Place: ${entry.placeName}, Region: ${entry.drinkType}, ⭐: ${entry.Rating || 'N/A'}`;
@@ -290,15 +303,17 @@
 	}
 
 	// This page didn't have a share function before (the 🔗 button did nothing here)
-	function shareEntry(text) {
-	  if (navigator.share) {
-		navigator.share({ title: "Shared Entry", text: text })
-		  .catch(error => console.error("Share failed:", error));
-	  } else if (navigator.clipboard) {
-		navigator.clipboard.writeText(text)
-		  .then(() => alert("Entry copied to clipboard!"))
-		  .catch(() => alert("Failed to copy entry."));
-	  }
+	function shareEntry(text) { Share.send(text, "Shared Entry"); }
+
+	// Share the open list as a clean message (uses your latest version of each entry)
+	function shareList() {
+	  const name = localStorage.getItem("currentList");
+	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
+	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
+	  if (!name || !lists[name]) return;
+	  const items = (lists[name].items || []).map(it => entries.find(e => e.id == it.id) || it);
+	  if (!items.length) { Share.toast("Add something to the list first."); return; }
+	  SendCard.openSheet("l", name, name);
 	}
 
 
@@ -328,11 +343,19 @@
 		sub.textContent = items.length + (items.length === 1 ? " item" : " items");
 		backBtn.style.display = "flex";
 		newListBtn.style.display = "none";
+		document.getElementById("shareListBtn").style.display = "";
 		filters.style.display = "none";
 
-		container.innerHTML = items.length
-		  ? `<ul class="list-group">${items.map((item, index) => formatEntry({ ...item, index })).join("")}</ul>`
-		  : `<p class="empty-note">Nothing in this list yet.</p>`;
+		const view = (function () { try { return localStorage.getItem("listView") || "list"; } catch (e) { return "list"; } })();
+		if (!items.length) {
+		  container.innerHTML = `<p class="empty-note">Nothing in this list yet.</p>`;
+		} else if (view === "gallery") {
+		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") + PhotoUI.galleryHtml(items);
+		  Photos.hydrate(container);
+		} else {
+		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") +
+			`<ul class="list-group">${items.map((item, index) => formatEntry({ ...item, index })).join("")}</ul>`;
+		}
 		return;
 	  }
 
@@ -342,6 +365,7 @@
 	  sub.textContent = "";
 	  backBtn.style.display = "none";
 	  newListBtn.style.display = "";
+	  document.getElementById("shareListBtn").style.display = "none";
 	  filters.style.display = "";
 
 	  document.querySelectorAll("#listFilters .chip").forEach(chip => {
@@ -393,6 +417,11 @@
 	}
 
 
+	function setListView(v) {
+	  try { localStorage.setItem("listView", v); } catch (e) {}
+	  loadLists();
+	}
+
 	function openList(listName) {
 	  localStorage.setItem("currentList", listName);
 	  loadLists();
@@ -435,7 +464,7 @@
 	function goHome() {
 	  document.body.classList.add('fade-out');
 	  setTimeout(() => {
-		window.location.href = 'indexnew.html';
+		window.location.href = 'index.html';
 	  }, 300);
 	}
 

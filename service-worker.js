@@ -1,4 +1,4 @@
-const CACHE_NAME = "category-tracker-v3";  // bump this on every release so users get the new files
+const CACHE_NAME = "category-tracker-v4";  // bump this on every release so users get the new files
 
 const FILES_TO_CACHE = [
   "./",
@@ -13,6 +13,7 @@ const FILES_TO_CACHE = [
   "guide.js",
   "list-sheet.js",
   "list-viewer-new.html",
+  "lookup.js",
   "map.js",
   "openings.js",
   "pchat.html",
