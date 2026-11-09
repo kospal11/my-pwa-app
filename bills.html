@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Bills</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css?v=48">
+  <script src="theme.js"></script>
+  <script src="bills-core.js"></script>
+  <meta name="theme-color" content="#0F1013">
+</head>
+<body class="app-body">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.3" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app-wrap">
+    <div class="screen-head">
+      <button class="back-btn" onclick="window.location.href='index.html'" aria-label="Back"><svg class="ic"><use href="#i-back"/></svg></button>
+      <div class="grow">
+        <h1 class="screen-title sm">Bills</h1>
+        <div class="screen-sub" id="sub"></div>
+      </div>
+    </div>
+
+    <div class="bl-sum" id="sum"></div>
+
+    <div class="bl-cal">
+      <div class="bl-cal-head">
+        <button class="bl-nav" id="prev" aria-label="Previous month"><svg class="ic" style="transform:scaleX(1)"><use href="#i-back"/></svg></button>
+        <div style="text-align:center">
+          <div class="t" id="monthTitle"></div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="bl-today" id="todayBtn">Today</button>
+          <button class="bl-nav" id="next" aria-label="Next month"><svg class="ic"><use href="#i-next"/></svg></button>
+        </div>
+      </div>
+      <div class="bl-grid" id="grid"></div>
+    </div>
+
+    <div class="bl-h"><span id="dayTitle"></span><button id="addForDay">+ Add for this day</button></div>
+    <div id="dayList"></div>
+
+    <div class="bl-h"><span>Coming up</span><button id="fab">+ New bill</button></div>
+    <div id="upList"></div>
+  </div>
+
+
+  <div class="es-overlay" id="sOv"></div>
+  <div class="es-sheet" id="sSheet" role="dialog" aria-label="Bills">
+    <div class="es-handle"></div>
+    <div class="es-title" id="sTitle"></div>
+    <div class="es-line" id="sTotal"></div>
+    <div id="sList"></div>
+    <div class="es-actions"><button class="es-btn primary" id="sClose">Done</button></div>
+  </div>
+  <div class="es-overlay" id="bOv"></div>
+  <div class="es-sheet" id="bSheet" role="dialog" aria-label="Bill">
+    <div class="es-handle"></div>
+    <div class="es-title" id="bTitle">New bill</div>
+    <div class="bl-field"><div class="bl-chips" id="bPresets"></div></div>
+    <div class="bl-field"><label for="bName">Name</label><input class="bl-input" id="bName" maxlength="60" placeholder="e.g. Electricity"></div>
+    <div class="bl-field"><label for="bAmount">Amount (€) – optional</label><input class="bl-input" id="bAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>
+    <div class="bl-field"><label for="bDue">Due date</label><input class="bl-input" id="bDue" type="date"></div>
+    <div class="bl-field"><label>Repeats</label><div class="bl-chips" id="bRepeat"></div></div>
+    <div class="bl-field"><label>Remind me</label><div class="bl-chips" id="bRemind"></div></div>
+    <div class="bl-field"><label for="bNote">Note</label><textarea class="bl-input" id="bNote" placeholder="Account number, reference…"></textarea></div>
+    <div class="bl-field" id="bErr" style="color:#FF7A7A;font-weight:700;font-size:0.85rem;display:none"></div>
+    <div class="es-actions">
+      <button class="es-btn" id="bCancel">Cancel</button>
+      <button class="es-btn primary" id="bSave">Save</button>
+    </div>
+    <div class="es-actions" id="bExtra" style="display:none">
+      <button class="es-btn" id="bUndo">Undo payment</button>
+      <button class="es-btn danger" id="bDelete">Delete</button>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab" onclick="window.location.href='index.html'"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+    <button class="tab" onclick="window.location.href='index.html#search'"><svg class="ic"><use href="#i-search"/></svg><span>Search</span></button>
+    <button class="tab" onclick="localStorage.removeItem('currentList');window.location.href='list-viewer-new.html'"><svg class="ic"><use href="#i-list"/></svg><span>My lists</span></button>
+    <button class="tab active" onclick="window.location.href='index.html#more'"><svg class="ic"><use href="#i-more"/></svg><span>More</span></button>
+  </nav>
+
+<script>
+(function () {
+  var B = window.Bills;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var now = new Date();
+  var view = { y: now.getFullYear(), m: now.getMonth() };
+  var sel = B.today();
+  var REPEATS = [["none", "Once"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["yearly", "Yearly"]];
+  var REMINDS = [[-1, "No reminder"], [0, "On the day"], [1, "1 day before"], [3, "3 days before"], [7, "1 week before"]];
+  var PRESETS = ["Rent", "Electricity", "Water", "Internet", "Phone", "Insurance"];
+  var form = { id: null, repeat: "none", remind: 1 };
+  var sumLists = { pay: [], paid: [], over: [] }, sumOpen = null;
+
+  function monthKey(y, m) { return y + "-" + (m < 9 ? "0" : "") + (m + 1); }
+  function repeatLabel(b) { return { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" }[b.repeat] || "One-off"; }
+
+  // all occurrences in a date window, newest rules applied
+  function occIn(from, to) {
+    var out = [];
+    B.load().forEach(function (b) { out = out.concat(B.occurrences(b, from, to)); });
+    return out;
+  }
+
+  function renderSummary() {
+    var from = monthKey(view.y, view.m) + "-01", to = monthKey(view.y, view.m) + "-" + B.daysInMonth(view.y, view.m);
+    var occ = occIn(from, to), t = B.today();
+    var toPay = 0, paid = 0, over = 0;
+    sumLists = { pay: [], paid: [], over: [] };
+    occ.forEach(function (o) {
+      var a = Number(o.bill.amount) || 0;
+      if (o.paid) { paid += a; sumLists.paid.push(o); }
+      else { toPay += a; sumLists.pay.push(o); if (o.date < t) { over++; sumLists.over.push(o); } }
+    });
+    $("sum").innerHTML =
+      '<button type="button" data-sum="pay"><div class="n">' + esc(B.money(toPay) || "€0") + '</div><div class="l">To pay</div></button>' +
+      '<button type="button" data-sum="paid"><div class="n">' + esc(B.money(paid) || "€0") + '</div><div class="l">Paid</div></button>' +
+      '<button type="button" data-sum="over"><div class="n' + (over ? " red" : "") + '">' + over + '</div><div class="l">Overdue</div></button>';
+    var s = B.summary();
+    $("sub").textContent = s.count ? (s.open.length + " open · " + s.count + " total") : "Nothing yet";
+    renderSumSheet();
+  }
+
+  var SUM_TITLES = { pay: "To pay", paid: "Paid", over: "Overdue" };
+  var SUM_EMPTY = { pay: "Nothing left to pay this month.", paid: "Nothing paid yet this month.", over: "Nothing overdue. Nice." };
+  function renderSumSheet() {
+    if (!sumOpen) return;
+    var list = sumLists[sumOpen].slice().sort(function (a, c) { return a.date < c.date ? -1 : a.date > c.date ? 1 : 0; });
+    var total = 0; list.forEach(function (o) { total += Number(o.bill.amount) || 0; });
+    var mon = new Date(view.y, view.m, 1).toLocaleDateString([], { month: "long", year: "numeric" });
+    $("sTitle").textContent = SUM_TITLES[sumOpen] + " · " + mon;
+    $("sTotal").textContent = list.length ? (list.length + (list.length === 1 ? " bill" : " bills") + " · " + (B.money(total) || "€0") + " in total") : "";
+    $("sList").innerHTML = list.length ? list.map(function (o) { return rowHtml(o, true); }).join("") : '<div class="bl-empty">' + SUM_EMPTY[sumOpen] + "</div>";
+  }
+  function openSum(kind) { sumOpen = kind; renderSumSheet(); $("sOv").classList.add("show"); $("sSheet").classList.add("show"); }
+  function closeSum() { sumOpen = null; $("sOv").classList.remove("show"); $("sSheet").classList.remove("show"); }
+
+  function renderCalendar() {
+    $("monthTitle").textContent = new Date(view.y, view.m, 1).toLocaleDateString([], { month: "long", year: "numeric" });
+    var first = new Date(view.y, view.m, 1), lead = (first.getDay() + 6) % 7;   // Monday first
+    var start = new Date(view.y, view.m, 1 - lead);
+    var from = B.ymd(start), to = B.ymd(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 41));
+    var byDay = {}, t = B.today();
+    occIn(from, to).forEach(function (o) { (byDay[o.date] = byDay[o.date] || []).push(o); });
+    var html = ["M", "T", "W", "T", "F", "S", "S"].map(function (d) { return '<div class="bl-dow">' + d + "</div>"; }).join("");
+    for (var i = 0; i < 42; i++) {
+      var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), key = B.ymd(d);
+      var dots = {};
+      (byDay[key] || []).forEach(function (o) { dots[B.status(o, t)] = 1; });
+      var dh = ["overdue", "soon", "later", "paid"].filter(function (k) { return dots[k]; }).map(function (k) { return '<span class="bl-dot ' + k + '"></span>'; }).join("");
+      html += '<button class="bl-day' + (d.getMonth() !== view.m ? " other" : "") + (key === t ? " is-today" : "") + (key === sel ? " is-sel" : "") +
+        '" data-d="' + key + '">' + d.getDate() + '<span class="bl-dots">' + dh + "</span></button>";
+    }
+    $("grid").innerHTML = html;
+  }
+
+  function rowHtml(o, showRel) {
+    var b = o.bill, st = B.status(o);
+    var amt = B.money(b.amount);
+    var sub = [repeatLabel(b)];
+    if (amt) sub.push(amt);
+    var rel = o.paid ? "" : B.relative(o.date);
+    var due = B.parse(o.date).toLocaleDateString([], { day: "numeric", month: "short" });
+    if (showRel && sumOpen) sub.push("due " + due);
+    if (showRel && sumOpen && o.paid && o.paidAt) sub.push("paid " + new Date(o.paidAt).toLocaleDateString([], { day: "numeric", month: "short" }));
+    var action = o.paid ? '<span class="bl-paid-tag">✓ Paid</span>' : (o.current ? '<button class="bl-pay" data-pay="' + esc(b.id) + '">✓ Paid</button>' : "");
+    return '<div class="bl-row" data-edit="' + esc(b.id) + '"><div class="bl-bar ' + st + '"></div><div class="bl-main"><div class="bl-name">' + esc(b.name) +
+      '</div><div class="bl-sub' + (st === "overdue" ? " overdue" : "") + '">' + esc(sub.join(" · ")) + (showRel && rel && !sumOpen ? " · " + esc(rel) : "") + "</div></div>" + action + "</div>";
+  }
+
+  function renderDay() {
+    var d = B.parse(sel);
+    $("dayTitle").textContent = sel === B.today() ? "Today" : d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+    var occ = occIn(sel, sel);
+    $("dayList").innerHTML = occ.length ? occ.map(function (o) { return rowHtml(o, false); }).join("") : '<div class="bl-empty">No bills on this day.</div>';
+  }
+
+  function renderUpcoming() {
+    var t = B.today(), end = B.addDays(t, 30), rows = [];
+    B.load().forEach(function (b) {
+      if (B.isDone(b)) return;
+      B.occurrences(b, "0000-01-01", end).forEach(function (o) { if (!o.paid && (o.date <= end)) rows.push(o); });
+    });
+    rows.sort(function (a, c) { return a.date < c.date ? -1 : a.date > c.date ? 1 : 0; });
+    // overdue repeats only show once (the open one), not every missed period
+    rows = rows.filter(function (o) { return o.date >= t || o.current; });
+    $("upList").innerHTML = rows.length ? rows.map(function (o) { return rowHtml(o, true); }).join("") :
+      '<div class="bl-empty">' + (B.load().length ? "Nothing due in the next 30 days." : "Tap + to add your first bill – rent, electricity, phone…") + "</div>";
+  }
+
+  function render() { renderSummary(); renderCalendar(); renderDay(); renderUpcoming(); }
+
+  // ---- form ----
+  function chips(id, opts, cur, onPick) {
+    $(id).innerHTML = opts.map(function (o) { return '<button type="button" class="chip' + (String(o[0]) === String(cur) ? " is-active" : "") + '" data-v="' + o[0] + '">' + o[1] + "</button>"; }).join("");
+    Array.prototype.forEach.call($(id).children, function (el) { el.onclick = function () { onPick(el.getAttribute("data-v")); }; });
+  }
+  function drawChips() {
+    chips("bRepeat", REPEATS, form.repeat, function (v) { form.repeat = v; drawChips(); });
+    chips("bRemind", REMINDS, form.remind, function (v) { form.remind = Number(v); drawChips(); });
+  }
+  function openForm(id, dateStr) {
+    var b = id ? B.load().filter(function (x) { return x.id === id; })[0] : null;
+    form = { id: b ? b.id : null, repeat: b ? (b.repeat || "none") : "none", remind: b ? (b.remind == null ? -1 : Number(b.remind)) : 1 };
+    $("bTitle").textContent = b ? "Edit bill" : "New bill";
+    $("bName").value = b ? b.name : "";
+    $("bAmount").value = b && b.amount !== "" && b.amount != null ? b.amount : "";
+    $("bDue").value = b ? b.due : (dateStr || sel);
+    $("bNote").value = b ? (b.note || "") : "";
+    $("bErr").style.display = "none";
+    $("bPresets").parentNode.style.display = b ? "none" : "";
+    $("bPresets").innerHTML = PRESETS.map(function (p) { return '<button type="button" class="chip" data-p="' + p + '">' + p + "</button>"; }).join("");
+    Array.prototype.forEach.call($("bPresets").children, function (el) { el.onclick = function () { $("bName").value = el.getAttribute("data-p"); }; });
+    var hasHist = b && (B.isRecurring(b) ? (b.history || []).length : !!b.paidAt);
+    $("bExtra").style.display = b ? "flex" : "none";
+    $("bUndo").style.display = hasHist ? "" : "none";
+    drawChips();
+    $("bOv").classList.add("show"); $("bSheet").classList.add("show");
+  }
+  function closeForm() { $("bOv").classList.remove("show"); $("bSheet").classList.remove("show"); }
+
+  function saveForm() {
+    var name = $("bName").value.trim(), due = $("bDue").value;
+    if (!name) { $("bErr").textContent = "Give the bill a name."; $("bErr").style.display = "block"; return; }
+    if (!B.parse(due)) { $("bErr").textContent = "Pick a due date."; $("bErr").style.display = "block"; return; }
+    var list = B.load(), b = form.id ? list.filter(function (x) { return x.id === form.id; })[0] : null;
+    if (!b) { b = { id: B.uid(), history: [] }; list.push(b); }
+    var dueChanged = b.due !== due;
+    b.name = name;
+    b.amount = $("bAmount").value === "" ? "" : Number($("bAmount").value);
+    b.due = due;
+    if (dueChanged || !b.anchorDay) b.anchorDay = B.parse(due).getDate();
+    b.repeat = form.repeat;
+    b.remind = form.remind;
+    b.note = $("bNote").value.trim();
+    B.save(list);
+    B.schedule(b, form.remind >= 0);
+    sel = due; var d = B.parse(due); view = { y: d.getFullYear(), m: d.getMonth() };
+    closeForm(); render();
+  }
+
+  // ---- events ----
+  $("fab").onclick = function () { openForm(null, sel); };
+  $("addForDay").onclick = function () { openForm(null, sel); };
+  $("bOv").onclick = closeForm; $("bCancel").onclick = closeForm; $("bSave").onclick = saveForm;
+  $("bDelete").onclick = function () {
+    if (!form.id || !confirm("Delete this bill?")) return;
+    var list = B.load(), b = list.filter(function (x) { return x.id === form.id; })[0];
+    if (b) B.cancel(b);
+    B.save(list.filter(function (x) { return x.id !== form.id; }));
+    closeForm(); render();
+  };
+  $("bUndo").onclick = function () { if (form.id) { B.undoPay(form.id); closeForm(); render(); } };
+  $("prev").onclick = function () { view.m--; if (view.m < 0) { view.m = 11; view.y--; } render(); };
+  $("next").onclick = function () { view.m++; if (view.m > 11) { view.m = 0; view.y++; } render(); };
+  $("todayBtn").onclick = function () { var n = new Date(); view = { y: n.getFullYear(), m: n.getMonth() }; sel = B.today(); render(); };
+  $("grid").onclick = function (e) {
+    var el = e.target.closest(".bl-day"); if (!el) return;
+    sel = el.getAttribute("data-d");
+    var d = B.parse(sel); if (d.getMonth() !== view.m) view = { y: d.getFullYear(), m: d.getMonth() };
+    render();
+  };
+  function listClick(e) {
+    var pay = e.target.closest("[data-pay]");
+    if (pay) { e.stopPropagation(); B.pay(pay.getAttribute("data-pay")); render(); return; }
+    var row = e.target.closest("[data-edit]");
+    if (row) openForm(row.getAttribute("data-edit"));
+  }
+  $("dayList").onclick = listClick; $("upList").onclick = listClick; $("sList").onclick = listClick;
+  $("sum").onclick = function (e) { var el = e.target.closest("[data-sum]"); if (el) openSum(el.getAttribute("data-sum")); };
+  $("sOv").onclick = closeSum; $("sClose").onclick = closeSum;
+
+  render();
+})();
+</script>
+</body>
+</html>

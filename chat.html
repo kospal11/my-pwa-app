@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css?v=2">
+  <script src="theme.js"></script>
+  <meta name="theme-color" content="#0F1013">
+  <style>
+    .field { width:100%; height:48px; border-radius:14px; border:1px solid rgba(255,255,255,.08); background:var(--surface-2); color:var(--text); padding:0 14px; font:inherit; margin-bottom:10px; }
+    .field:focus { outline:2px solid var(--accent); outline-offset:0; }
+    .auth-card { background:var(--surface); border-radius:20px; padding:20px; margin-top:8px; }
+    .auth-card h2 { font-size:20px; font-weight:800; margin:0 0 4px; }
+    .muted { color:var(--muted); font-size:13px; }
+    .err { color:#ff7a7a; font-size:13px; min-height:18px; margin:2px 0 8px; }
+    .link-btn { background:none; border:0; color:var(--accent); font-weight:700; padding:6px 0; font:inherit; }
+    .chat-row { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--surface); border:0; color:var(--text); border-radius:16px; padding:12px 14px; margin-bottom:8px; }
+    .avatar { width:44px; height:44px; border-radius:50%; background:var(--accent); color:var(--ink); font-weight:800; display:flex; align-items:center; justify-content:center; flex:none; text-transform:uppercase; }
+    .chat-row .who { font-weight:700; }
+    .chat-row .snippet { color:var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60vw; }
+    .chat-row.unread .snippet { color:var(--text); font-weight:700; }
+    .dot { width:10px; height:10px; border-radius:50%; background:var(--accent); margin-left:auto; flex:none; }
+    .newchat { display:flex; gap:8px; margin-bottom:14px; }
+    .newchat .field { margin:0; }
+    .newchat .btn-accent { height:48px; padding:0 18px; flex:none; }
+    .conn { display:none; background:#3a2a10; color:var(--accent); font-size:12px; text-align:center; padding:6px; border-radius:10px; margin-bottom:8px; }
+    .conn.show { display:block; }
+    #thread { display:flex; flex-direction:column; gap:6px; padding-bottom:150px; }
+    .bubble { max-width:80%; padding:9px 13px; border-radius:18px; line-height:1.35; word-wrap:break-word; white-space:pre-wrap; }
+    .bubble.me { align-self:flex-end; background:var(--accent); color:var(--ink); border-bottom-right-radius:6px; }
+    .bubble.them { align-self:flex-start; background:var(--surface-2); border-bottom-left-radius:6px; }
+    .bubble time { display:block; font-size:10px; opacity:.6; margin-top:3px; }
+    .share-card { background:rgba(0,0,0,.18); border-radius:12px; padding:10px; margin-top:4px; white-space:normal; }
+    .bubble.them .share-card { background:var(--bg); }
+    .share-card .t { font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+    .share-card .n { font-weight:800; }
+    .share-card button { margin-top:8px; border:0; border-radius:10px; padding:6px 12px; font-weight:700; background:var(--accent); color:var(--ink); }
+    .bubble.me .share-card button { background:var(--ink); color:var(--accent); }
+    .composer { position:fixed; left:0; right:0; bottom:calc(72px + env(safe-area-inset-bottom)); padding:10px 16px; background:var(--bg); display:flex; gap:8px; align-items:center; z-index:5; }
+    .composer .field { margin:0; }
+    .composer .icon-btn, .composer .btn-accent { flex:none; }
+    .pick-row { display:block; width:100%; text-align:left; background:var(--surface-2); border:0; color:var(--text); padding:10px 12px; border-radius:12px; margin-bottom:6px; }
+    .pick-row small { color:var(--muted); display:block; }
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:2400; display:none; }
+    .overlay.show { display:block; }
+    .picker { position:fixed; left:0; right:0; bottom:0; max-height:70vh; overflow:auto; background:var(--surface); border-radius:22px 22px 0 0; padding:16px; transform:translateY(100%); transition:transform .25s; z-index:2500; }
+    .picker.show { transform:none; }
+    .toast-lite { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(150px + env(safe-area-inset-bottom)); background:var(--surface-2); padding:8px 14px; border-radius:20px; z-index:3000; display:none; }
+  </style>
+</head>
+
+<body class="app-body">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.3" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7-7-1z"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app-wrap">
+
+    <div class="screen-head">
+      <button id="backBtn" class="back-btn" style="display:none;" onclick="showChats()" aria-label="Back">
+        <svg class="ic"><use href="#i-back"/></svg>
+      </button>
+      <div class="grow">
+        <h1 class="screen-title" id="title">Chat</h1>
+        <div class="screen-sub" id="sub"></div>
+      </div>
+      <button id="menuBtn" class="link-btn" style="display:none;" onclick="signOut()">Sign out</button>
+    </div>
+
+    <div id="conn" class="conn">Reconnecting…</div>
+
+    <!-- Sign in / register -->
+    <div id="authScreen" style="display:none;">
+      <div class="auth-card">
+        <h2 id="authTitle">Sign in</h2>
+        <p class="muted">Connect to your chat server and sign in.</p>
+        <input id="serverInput" class="field" placeholder="Server, e.g. http://192.168.1.20:3000" autocapitalize="off" autocorrect="off" inputmode="url">
+        <input id="userInput" class="field" placeholder="Username" autocapitalize="off" autocorrect="off">
+        <input id="passInput" class="field" type="password" placeholder="Password">
+        <div id="authErr" class="err"></div>
+        <button id="authBtn" class="btn-accent w-100" style="height:48px;" onclick="submitAuth()">Sign in</button>
+        <div class="text-center mt-2"><button class="link-btn" id="authSwitch" onclick="toggleAuthMode()">No account? Create one</button></div>
+      </div>
+    </div>
+
+    <!-- Chat list -->
+    <div id="chatsScreen" style="display:none;">
+      <div class="newchat">
+        <input id="newChatInput" class="field" placeholder="Start a chat: type a username" autocapitalize="off" autocorrect="off">
+        <button class="btn-accent" onclick="startChat()">Chat</button>
+      </div>
+      <div id="newChatErr" class="err"></div>
+      <div id="chatList"></div>
+    </div>
+
+    <!-- Conversation -->
+    <div id="threadScreen" style="display:none;">
+      <div id="thread"></div>
+      <div class="composer">
+        <button class="icon-btn" onclick="openPicker()" aria-label="Share an entry"><svg class="ic"><use href="#i-plus"/></svg></button>
+        <input id="msgInput" class="field" placeholder="Message" autocomplete="off">
+        <button class="btn-accent" style="height:48px;width:48px;padding:0;" onclick="sendText()" aria-label="Send"><svg class="ic" style="width:20px;height:20px"><use href="#i-send"/></svg></button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="pickOverlay" class="overlay" onclick="closePicker()"></div>
+  <div id="picker" class="picker">
+    <h4 style="font-weight:800;">Share an entry</h4>
+    <p class="muted">Pick one of your entries to send.</p>
+    <div id="pickList"></div>
+  </div>
+  <div id="toast" class="toast-lite"></div>
+
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab" onclick="window.location.href='index.html'"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+    <button class="tab" onclick="window.location.href='index.html#search'"><svg class="ic"><use href="#i-search"/></svg><span>Search</span></button>
+    <button class="tab" onclick="localStorage.removeItem('currentList');window.location.href='list-viewer-new.html'"><svg class="ic"><use href="#i-list"/></svg><span>My lists</span></button>
+    <button class="tab active" onclick="showChats()"><svg class="ic"><use href="#i-more"/></svg><span>Chat</span></button>
+  </nav>
+
+<script>
+  /* ---------- tiny helpers ---------- */
+  const $ = id => document.getElementById(id);
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+  let server = lsGet("chatServer") || "";
+  let token = lsGet("chatToken") || "";
+  let me = lsGet("chatUser") || "";
+  let authMode = "login";
+  let current = null;       // username of open conversation
+  let lastId = 0;           // newest message id shown in the open thread
+  let es = null;            // EventSource
+  let chats = [];
+
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg; t.style.display = "block";
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.style.display = "none", 2200);
+  }
+
+  function normalizeServer(s) {
+    s = (s || "").trim().replace(/\/+$/, "");
+    if (s && !/^https?:\/\//i.test(s)) s = "http://" + s;
+    return s;
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(server + path, {
+      method: opts.body ? "POST" : "GET",
+      headers: Object.assign(
+        { "Content-Type": "application/json" },
+        token ? { Authorization: "Bearer " + token } : {}
+      ),
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (res.status === 401 && token) { signOut(true); }
+    if (!res.ok) throw new Error(data.error || "Something went wrong");
+    return data;
+  }
+
+  /* ---------- screens ---------- */
+  function show(which) {
+    ["authScreen", "chatsScreen", "threadScreen"].forEach(id => $(id).style.display = id === which ? "" : "none");
+    $("backBtn").style.display = which === "threadScreen" ? "" : "none";
+    $("menuBtn").style.display = which === "chatsScreen" ? "" : "none";
+  }
+
+  function showAuth() {
+    closeStream();
+    $("title").textContent = "Chat"; $("sub").textContent = "";
+    $("serverInput").value = server;
+    show("authScreen");
+  }
+
+  function toggleAuthMode() {
+    authMode = authMode === "login" ? "register" : "login";
+    $("authTitle").textContent = authMode === "login" ? "Sign in" : "Create account";
+    $("authBtn").textContent = authMode === "login" ? "Sign in" : "Create account";
+    $("authSwitch").textContent = authMode === "login" ? "No account? Create one" : "Have an account? Sign in";
+    $("authErr").textContent = "";
+  }
+
+  async function submitAuth() {
+    server = normalizeServer($("serverInput").value);
+    $("authErr").textContent = "";
+    if (!server) { $("authErr").textContent = "Enter the server address"; return; }
+    try {
+      const data = await api(authMode === "login" ? "/api/login" : "/api/register", {
+        body: { username: $("userInput").value, password: $("passInput").value }
+      });
+      token = data.token; me = data.username;
+      lsSet("chatServer", server); lsSet("chatToken", token); lsSet("chatUser", me);
+      $("passInput").value = "";
+      showChats();
+    } catch (e) {
+      $("authErr").textContent = e.message === "Failed to fetch"
+        ? "Can't reach the server. Is it running, and is the phone on the same Wi-Fi?"
+        : e.message;
+    }
+  }
+
+  function signOut(silent) {
+    if (token && !silent) { fetch(server + "/api/logout", { method: "POST", headers: { Authorization: "Bearer " + token } }).catch(() => {}); }
+    token = ""; me = ""; current = null;
+    lsDel("chatToken"); lsDel("chatUser");
+    showAuth();
+  }
+
+  async function showChats() {
+    if (!token) return showAuth();
+    current = null;
+    $("title").textContent = "Chat"; $("sub").textContent = "Signed in as " + me;
+    show("chatsScreen");
+    openStream();
+    await loadChats();
+  }
+
+  /* ---------- unread tracking ---------- */
+  function seenMap() { try { return JSON.parse(lsGet("chatSeen_" + me)) || {}; } catch (e) { return {}; } }
+  function markSeen(user, id) { const m = seenMap(); if (id > (m[user] || 0)) { m[user] = id; lsSet("chatSeen_" + me, JSON.stringify(m)); } }
+
+  function snippet(m) {
+    const who = m.from === me ? "You: " : "";
+    if (m.entry) return who + "Shared: " + entryName(m.entry);
+    return who + m.text;
+  }
+
+  async function loadChats() {
+    try {
+      chats = (await api("/api/chats")).chats;
+    } catch (e) { $("newChatErr").textContent = e.message === "Failed to fetch" ? "Can't reach the server" : e.message; return; }
+    $("newChatErr").textContent = "";
+    renderChats();
+  }
+
+  function renderChats() {
+    const wrap = $("chatList");
+    wrap.innerHTML = "";
+    if (!chats.length) {
+      wrap.innerHTML = '<p class="muted text-center" style="margin-top:30px;">No chats yet. Type a friend\'s username above to start one.</p>';
+      return;
+    }
+    const seen = seenMap();
+    chats.forEach(c => {
+      const unread = c.last.from !== me && c.last.id > (seen[c.user] || 0);
+      const b = document.createElement("button");
+      b.className = "chat-row" + (unread ? " unread" : "");
+      b.onclick = () => openThread(c.user);
+      const av = document.createElement("div"); av.className = "avatar"; av.textContent = c.user[0];
+      const mid = document.createElement("div");
+      const who = document.createElement("div"); who.className = "who"; who.textContent = c.user;
+      const sn = document.createElement("div"); sn.className = "snippet"; sn.textContent = snippet(c.last);
+      mid.appendChild(who); mid.appendChild(sn);
+      b.appendChild(av); b.appendChild(mid);
+      if (unread) { const d = document.createElement("span"); d.className = "dot"; b.appendChild(d); }
+      wrap.appendChild(b);
+    });
+  }
+
+  async function startChat() {
+    const name = $("newChatInput").value.trim().toLowerCase();
+    if (!name) return;
+    try {
+      const r = await api("/api/user?name=" + encodeURIComponent(name));
+      if (!r.exists) { $("newChatErr").textContent = name === me ? "That's you!" : "No user called “" + name + "”"; return; }
+      $("newChatInput").value = ""; $("newChatErr").textContent = "";
+      openThread(name);
+    } catch (e) { $("newChatErr").textContent = e.message; }
+  }
+
+  /* ---------- conversation ---------- */
+  async function openThread(user) {
+    current = user; lastId = 0;
+    $("thread").innerHTML = "";
+    $("title").textContent = user; $("sub").textContent = "";
+    show("threadScreen");
+    try {
+      const r = await api("/api/messages?with=" + encodeURIComponent(user));
+      r.messages.forEach(addBubble);
+    } catch (e) { toast(e.message); }
+    scrollDown();
+  }
+
+  function entryName(e) { return e.placeName || e.movieName || e.otherName || e.name || "Entry"; }
+
+  function timeLabel(ts) {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function addBubble(m) {
+    if (m.id <= lastId) return;      // already shown
+    lastId = m.id;
+    const div = document.createElement("div");
+    div.className = "bubble " + (m.from === me ? "me" : "them");
+    if (m.text) { const t = document.createElement("div"); t.textContent = m.text; div.appendChild(t); }
+    if (m.entry) {
+      const card = document.createElement("div"); card.className = "share-card";
+      const t = document.createElement("div"); t.className = "t"; t.textContent = m.entry.type || "Entry";
+      const n = document.createElement("div"); n.className = "n"; n.textContent = entryName(m.entry);
+      card.appendChild(t); card.appendChild(n);
+      if (m.from !== me) {
+        const b = document.createElement("button"); b.textContent = "Save to my entries";
+        b.onclick = () => { saveSharedEntry(m.entry); b.textContent = "Saved ✓"; b.disabled = true; };
+        card.appendChild(b);
+      }
+      div.appendChild(card);
+    }
+    const tm = document.createElement("time"); tm.textContent = timeLabel(m.ts); div.appendChild(tm);
+    $("thread").appendChild(div);
+    markSeen(current, m.id);
+  }
+
+  function scrollDown() { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }
+
+  async function sendMessage(payload) {
+    try {
+      const r = await api("/api/send", { body: Object.assign({ to: current }, payload) });
+      addBubble(r.message); scrollDown();
+    } catch (e) { toast(e.message === "Failed to fetch" ? "Can't reach the server" : e.message); }
+  }
+
+  function sendText() {
+    const input = $("msgInput");
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    sendMessage({ text });
+  }
+  $("msgInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendText(); } });
+  $("newChatInput").addEventListener("keydown", e => { if (e.key === "Enter") startChat(); });
+  $("passInput").addEventListener("keydown", e => { if (e.key === "Enter") submitAuth(); });
+
+  /* ---------- sharing entries ---------- */
+  function myEntries() { try { return JSON.parse(lsGet("entries")) || []; } catch (e) { return []; } }
+
+  function openPicker() {
+    const list = $("pickList");
+    list.innerHTML = "";
+    const entries = myEntries().slice().reverse();
+    if (!entries.length) list.innerHTML = '<p class="muted">You have no entries yet.</p>';
+    entries.slice(0, 60).forEach(e => {
+      const b = document.createElement("button"); b.className = "pick-row";
+      b.textContent = entryName(e);
+      const s = document.createElement("small"); s.textContent = e.type || "Other"; b.appendChild(s);
+      b.onclick = () => { closePicker(); sendMessage({ entry: e }); };
+      list.appendChild(b);
+    });
+    $("pickOverlay").classList.add("show"); $("picker").classList.add("show");
+  }
+  function closePicker() { $("pickOverlay").classList.remove("show"); $("picker").classList.remove("show"); }
+
+  function saveSharedEntry(entry) {
+    const saved = myEntries();
+    const copy = Object.assign({}, entry);
+    saved.push(copy);
+    lsSet("entries", JSON.stringify(saved));
+    toast("Saved to your entries");
+  }
+
+  /* ---------- live stream ---------- */
+  function closeStream() { if (es) { es.close(); es = null; } }
+
+  function openStream() {
+    if (es || !token) return;
+    es = new EventSource(server + "/api/stream?token=" + encodeURIComponent(token));
+    es.onopen = () => {
+      $("conn").classList.remove("show");
+      catchUp();                         // fetch anything missed while disconnected
+    };
+    es.onerror = () => { $("conn").classList.add("show"); };
+    es.addEventListener("message", ev => {
+      const m = JSON.parse(ev.data);
+      const other = m.from === me ? m.to : m.from;
+      if (current && other === current) { addBubble(m); scrollDown(); }
+      if (!current) loadChats();
+      else if (other !== current) toast("New message from " + other);
+    });
+  }
+
+  async function catchUp() {
+    if (current) {
+      try {
+        const r = await api("/api/messages?with=" + encodeURIComponent(current) + "&since=" + lastId);
+        r.messages.forEach(addBubble);
+        scrollDown();
+      } catch (e) {}
+    } else if (token) { loadChats(); }
+  }
+
+  // Browsers pause connections in the background; reconnect when the app comes back.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && token) { closeStream(); openStream(); }
+  });
+
+  /* ---------- start ---------- */
+  if (token && server) showChats(); else showAuth();
+</script>
+</body>
+</html>

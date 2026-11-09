@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Private chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css?v=48">
+  <script src="theme.js"></script>
+  <meta name="theme-color" content="#0F1013">
+  <style>
+    .field { box-sizing:border-box; width:100%; height:48px; border-radius:14px; border:1px solid rgba(255,255,255,.08); background:var(--surface-2); color:var(--text); padding:0 14px; font:inherit; margin-bottom:10px; }
+    textarea.field { height:auto; min-height:84px; padding:12px 14px; resize:none; font-size:13px; }
+    .field:focus { outline:2px solid var(--accent); outline-offset:0; }
+    .card-x { background:var(--surface); border-radius:20px; padding:18px; margin-bottom:14px; }
+    .card-x h2 { font-size:18px; font-weight:800; margin:0 0 4px; }
+    .muted { color:var(--muted); font-size:13px; }
+    .err { color:#ff7a7a; font-size:13px; min-height:18px; margin:2px 0 6px; }
+    .link-btn { background:none; border:0; color:var(--accent); font-weight:700; padding:6px 0; font:inherit; }
+    .btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .pbtn { height:44px; border-radius:22px; border:0; padding:0 18px; font-weight:800; background:var(--surface-2); color:var(--accent); }
+    .pbtn.primary { background:var(--accent); color:var(--ink); }
+    .pbtn.danger { color:#ff7a7a; }
+    .pbtn.small { height:34px; padding:0 14px; font-size:13px; }
+    .chat-row { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--surface); border:0; color:var(--text); border-radius:16px; padding:12px 14px; margin-bottom:8px; }
+    .avatar { width:44px; height:44px; border-radius:50%; background:var(--accent); color:var(--ink); font-weight:800; display:flex; align-items:center; justify-content:center; flex:none; text-transform:uppercase; }
+    .chat-row .who { font-weight:700; }
+    .chat-row .snippet { color:var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:58vw; }
+    .chat-row.unread .snippet { color:var(--text); font-weight:700; }
+    .dot { width:10px; height:10px; border-radius:50%; background:var(--accent); margin-left:auto; flex:none; }
+    .badge-x { font-size:11px; font-weight:800; color:var(--ink); background:#ffd37a; border-radius:8px; padding:1px 7px; margin-left:6px; }
+    .lock-note { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); background:var(--surface); border-radius:12px; padding:8px 12px; margin-bottom:12px; }
+    #thread { display:flex; flex-direction:column; gap:6px; padding-bottom:170px; }
+    .bubble { max-width:82%; padding:9px 13px; border-radius:18px; line-height:1.35; word-wrap:break-word; white-space:pre-wrap; }
+    .bubble.me { align-self:flex-end; background:var(--accent); color:var(--ink); border-bottom-right-radius:6px; }
+    .bubble.them { align-self:flex-start; background:var(--surface-2); border-bottom-left-radius:6px; }
+    .bubble time { display:block; font-size:10px; opacity:.6; margin-top:3px; }
+    .bubble .acts { display:flex; gap:12px; margin-top:4px; }
+    .bubble .acts button { background:none; border:0; padding:2px 0; font-size:12px; font-weight:800; color:inherit; opacity:.75; }
+    .share-card { background:rgba(0,0,0,.18); border-radius:12px; padding:10px; margin-top:4px; white-space:normal; }
+    .bubble.them .share-card { background:var(--bg); }
+    .share-card .t { font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+    .share-card .n { font-weight:800; }
+    .share-card .items { font-size:13px; opacity:.85; margin-top:4px; }
+    .share-card button { margin-top:8px; border:0; border-radius:10px; padding:6px 12px; font-weight:700; background:var(--accent); color:var(--ink); }
+    .bubble.me .share-card button { background:var(--ink); color:var(--accent); }
+    .composer { position:fixed; left:0; right:0; bottom:calc(72px + env(safe-area-inset-bottom)); padding:10px 16px; background:var(--bg); display:flex; gap:8px; align-items:center; z-index:5; }
+    .composer .field { margin:0; }
+    .composer .icon-btn, .composer .btn-accent { flex:none; }
+    .pick-row { display:block; width:100%; text-align:left; background:var(--surface-2); border:0; color:var(--text); padding:10px 12px; border-radius:12px; margin-bottom:6px; }
+    .pick-row small { color:var(--muted); display:block; }
+    .seg { display:flex; gap:6px; margin-bottom:10px; }
+    .seg button { flex:1; height:36px; border:0; border-radius:18px; background:var(--surface-2); color:var(--muted); font-weight:800; }
+    .seg button.on { background:var(--accent); color:var(--ink); }
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:2400; display:none; }
+    .overlay.show { display:block; }
+    .picker { position:fixed; left:0; right:0; bottom:0; max-height:80vh; overflow:auto; background:var(--surface); border-radius:22px 22px 0 0; padding:16px 16px calc(20px + env(safe-area-inset-bottom)); transform:translateY(100%); transition:transform .25s; z-index:2500; }
+    .picker.show { transform:none; }
+    .qrbox { background:#fff; border-radius:16px; padding:10px; display:flex; justify-content:center; margin:10px auto; width:fit-content; max-width:100%; }
+    .qrbox svg { max-width:100%; height:auto; }
+    .code-text { font-size:11px; word-break:break-all; color:var(--muted); background:var(--surface-2); border-radius:12px; padding:10px; margin-bottom:10px; user-select:all; }
+    .safety { font-size:22px; font-weight:800; letter-spacing:.08em; text-align:center; margin:10px 0; font-variant-numeric:tabular-nums; }
+    .banner { background:#3a2a10; color:#ffd37a; border-radius:14px; padding:12px 14px; margin-bottom:12px; font-size:14px; }
+    .banner b { color:#fff; }
+    .toast-lite { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(150px + env(safe-area-inset-bottom)); background:var(--surface-2); padding:8px 14px; border-radius:20px; z-index:3000; display:none; max-width:88vw; text-align:center; }
+    #scanBox { position:fixed; inset:0; background:#000; z-index:3500; display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+    #scanBox video { width:100%; max-height:70vh; object-fit:cover; }
+    #scanBox.show { display:flex; }
+  </style>
+</head>
+
+<body class="app-body">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.3" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7-7-1z"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app-wrap">
+
+    <div class="screen-head">
+      <button id="backBtn" class="back-btn" style="display:none;" onclick="showList()" aria-label="Back">
+        <svg class="ic"><use href="#i-back"/></svg>
+      </button>
+      <div class="grow">
+        <h1 class="screen-title" id="title">Private chat</h1>
+        <div class="screen-sub" id="sub">No server. Only you and your friend can read it.</div>
+      </div>
+      <button id="menuBtn" class="link-btn" style="display:none;" onclick="openFriendMenu()">Info</button>
+    </div>
+
+    <div id="unsupported" class="banner" style="display:none;">This phone's browser engine can't do the encryption this needs. Update "Android System WebView" in the Play Store.</div>
+
+    <!-- Friends list -->
+    <div id="listScreen" style="display:none;">
+      <div id="nameCard" class="card-x" style="display:none;">
+        <h2>What should friends call you?</h2>
+        <p class="muted">This name is only shown to the friends you add.</p>
+        <input id="nameInput" class="field" placeholder="Your name" maxlength="24" autocomplete="off">
+        <button class="pbtn primary" onclick="saveName()">Continue</button>
+      </div>
+      <div id="clipBanner" class="banner" style="display:none;"></div>
+      <div id="pendingBanner" class="banner" style="display:none;"></div>
+      <div class="btn-row" style="margin-bottom:14px;">
+        <button class="pbtn primary" onclick="openAdd()">+ Add friend</button>
+        <button class="pbtn" onclick="openPaste()">Paste a message</button>
+      </div>
+      <div id="friendList"></div>
+      <div id="emptyHelp" class="muted" style="display:none;padding:6px 4px;">
+        No friends yet. Meet a friend, press <b>Add friend</b> on both phones and swap codes. After that you can send each other messages, lists and suggestions through any app, and nobody in between can read them.
+      </div>
+    </div>
+
+    <!-- Add friend -->
+    <div id="addScreen" style="display:none;">
+      <div class="card-x">
+        <h2>1. Your code</h2>
+        <p class="muted">Let your friend scan this, or copy the text and send it to them.</p>
+        <div id="myQr" class="qrbox"></div>
+        <div id="myCodeText" class="code-text"></div>
+        <div class="btn-row">
+          <button class="pbtn small" onclick="copyMyCode()">Copy</button>
+          <button class="pbtn small" onclick="shareMyCode()">Share…</button>
+          <button class="pbtn small" onclick="newMyCode()">New code</button>
+        </div>
+      </div>
+      <div class="card-x">
+        <h2>2. Your friend's code</h2>
+        <p class="muted">Paste the code your friend gave you, or scan it.</p>
+        <textarea id="theirCode" class="field" placeholder="CATPAIR1:…" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+        <div id="addErr" class="err"></div>
+        <div class="btn-row">
+          <button class="pbtn primary" onclick="connectFriend()">Connect</button>
+          <button class="pbtn" onclick="pasteInto('theirCode')">Paste</button>
+          <button class="pbtn" id="scanBtn" onclick="startScan()" style="display:none;">Scan</button>
+        </div>
+      </div>
+      <p class="muted" style="padding:0 6px;">You only need to do this once per friend. Do it in person if you can; that's what makes it safe.</p>
+    </div>
+
+    <!-- Conversation -->
+    <div id="threadScreen" style="display:none;">
+      <div id="confirmBanner" class="banner" style="display:none;"></div>
+      <div class="lock-note"><svg class="ic" style="width:16px;height:16px"><use href="#i-lock"/></svg><span>Locked on this phone. Send each message through any app you like.</span></div>
+      <div id="thread"></div>
+      <div class="composer">
+        <button class="icon-btn" onclick="openPicker()" aria-label="Send an entry or list"><svg class="ic"><use href="#i-plus"/></svg></button>
+        <input id="msgInput" class="field" placeholder="Message" autocomplete="off">
+        <button class="btn-accent" style="height:48px;width:48px;padding:0;" onclick="sendText()" aria-label="Send"><svg class="ic" style="width:20px;height:20px"><use href="#i-send"/></svg></button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="ov" class="overlay" onclick="closeSheet()"></div>
+
+  <!-- Paste a message -->
+  <div id="pasteSheet" class="picker">
+    <h4 style="font-weight:800;">Open a private message</h4>
+    <p class="muted">Copy the scrambled message from WhatsApp, SMS, email… then paste it here.</p>
+    <textarea id="pasteBox" class="field" placeholder="CATSEC1:…" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+    <div id="pasteErr" class="err"></div>
+    <div class="btn-row">
+      <button class="pbtn primary" onclick="openPasted()">Open</button>
+      <button class="pbtn" onclick="pasteInto('pasteBox')">Paste</button>
+    </div>
+  </div>
+
+  <!-- Attach -->
+  <div id="pickSheet" class="picker">
+    <h4 style="font-weight:800;">Send to <span id="pickWho"></span></h4>
+    <div class="seg"><button id="segE" class="on" onclick="pickTab('e')">Entries</button><button id="segL" onclick="pickTab('l')">Lists</button></div>
+    <input id="pickSearch" class="field" placeholder="Search" oninput="renderPick()" autocomplete="off">
+    <div id="pickList"></div>
+  </div>
+
+  <!-- Share one message again / QR -->
+  <div id="qrSheet" class="picker">
+    <h4 style="font-weight:800;">Show as QR code</h4>
+    <p class="muted">Your friend can scan this with any QR scanner, copy the text, and paste it into the app.</p>
+    <div id="msgQr" class="qrbox"></div>
+    <div id="qrNote" class="muted"></div>
+  </div>
+
+  <!-- Friend info -->
+  <div id="infoSheet" class="picker">
+    <h4 style="font-weight:800;" id="infoName"></h4>
+    <p class="muted">Safety number. If your friend sees the same digits on their phone, nobody has tampered with your connection. Compare them in person or on a call.</p>
+    <div id="safety" class="safety"></div>
+    <input id="renameInput" class="field" placeholder="Name" maxlength="24">
+    <div class="btn-row">
+      <button class="pbtn primary" onclick="doRename()">Save name</button>
+      <button class="pbtn danger" onclick="doRemove()">Remove friend</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast-lite"></div>
+
+  <div id="scanBox">
+    <video id="scanVideo" playsinline muted></video>
+    <div class="muted" style="color:#fff;">Point the camera at your friend's code</div>
+    <button class="pbtn" onclick="stopScan()">Cancel</button>
+  </div>
+
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab" onclick="window.location.href='index.html'"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+    <button class="tab" onclick="window.location.href='index.html#search'"><svg class="ic"><use href="#i-search"/></svg><span>Search</span></button>
+    <button class="tab" onclick="localStorage.removeItem('currentList');window.location.href='list-viewer-new.html'"><svg class="ic"><use href="#i-list"/></svg><span>My lists</span></button>
+    <button class="tab active" onclick="showList()"><svg class="ic"><use href="#i-lock"/></svg><span>Private</span></button>
+  </nav>
+
+<script src="qr.js"></script>
+<script src="pchat-core.js"></script>
+<script>
+  var $ = function (id) { return document.getElementById(id); };
+  var cur = null;                 // friend record being viewed
+  var pickMode = "e";
+  var myCodeText = "";
+  var lastWire = "";
+  var scanStream = null, scanTimer = null;
+  var pendingSend = null;          // something to send to whichever friend gets tapped next
+
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.style.display = "block";
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.style.display = "none"; }, 2600);
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function entryName(e) { return e.placeName || e.movieName || e.otherName || e.name || "Entry"; }
+  function timeLabel(ts) { var d = new Date(ts), now = new Date(); var t = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); return d.toDateString() === now.toDateString() ? t : d.toLocaleDateString([], { day: "numeric", month: "short" }) + " " + t; }
+
+  function screen(which) {
+    ["listScreen", "addScreen", "threadScreen"].forEach(function (s) { $(s).style.display = s === which ? "block" : "none"; });
+    $("backBtn").style.display = which === "listScreen" ? "none" : "";
+    $("menuBtn").style.display = which === "threadScreen" ? "" : "none";
+  }
+  function openSheet(id) { $("ov").classList.add("show"); $(id).classList.add("show"); }
+  function closeSheet() { $("ov").classList.remove("show"); ["pasteSheet", "pickSheet", "qrSheet", "infoSheet"].forEach(function (s) { $(s).classList.remove("show"); }); }
+
+  /* ---------- list ---------- */
+  async function showList() {
+    cur = null; closeSheet(); stopScan();
+    var pb = $("pendingBanner");
+    if (pb) { pb.style.display = pendingSend ? "block" : "none"; if (pendingSend) pb.innerHTML = 'Choose who to send <b>' + esc(pendingSend.label) + '</b> to. Tap a friend below. <button class="pbtn small" style="margin-left:6px;" onclick="pendingSend=null;showList()">Cancel</button>'; }
+    screen("listScreen");
+    $("title").textContent = "Private chat"; $("sub").textContent = "No server. Only you and your friend can read it.";
+    var hasName = !!PChat.myName();
+    $("nameCard").style.display = hasName ? "none" : "block";
+    var friends = await PChat.listFriends(), msgs = await PChat.allMessages();
+    var box = $("friendList"); box.innerHTML = "";
+    $("emptyHelp").style.display = friends.length || !hasName ? "none" : "block";
+    friends.map(function (f) {
+      var mine = msgs.filter(function (m) { return m.fid === f.id; }).sort(function (a, b) { return a.ts - b.ts; });
+      return { f: f, last: mine[mine.length - 1], unread: mine.some(function (m) { return m.dir === "in" && m.ts > PChat.lastRead(f.id); }) };
+    }).sort(function (a, b) { return (b.last ? b.last.ts : b.f.created) - (a.last ? a.last.ts : a.f.created); }).forEach(function (x) {
+      var b = document.createElement("button"); b.className = "chat-row" + (x.unread ? " unread" : "");
+      var snip = x.last ? (x.last.dir === "out" ? "You: " : "") + snippet(x.last.body) : "No messages yet";
+      b.innerHTML = '<div class="avatar">' + esc(x.f.name.charAt(0)) + '</div><div><div class="who">' + esc(x.f.name) + (x.f.confirmed ? "" : '<span class="badge-x">New</span>') + '</div><div class="snippet">' + esc(snip) + '</div></div>' + (x.unread ? '<span class="dot"></span>' : "");
+      b.onclick = function () { openThread(x.f.id); };
+      box.appendChild(b);
+    });
+    checkClipboard();
+  }
+  function snippet(b) {
+    if (!b) return "";
+    if (b.k === "e") return "📎 " + entryName(b.entry || {});
+    if (b.k === "l") return "📋 " + (b.name || "List");
+    return b.text || "";
+  }
+  async function saveName() {
+    var v = $("nameInput").value.trim(); if (!v) return;
+    PChat.setMyName(v); showList();
+  }
+
+  /* ---------- add friend ---------- */
+  async function openAdd() {
+    if (!PChat.myName()) { toast("First tell me what friends should call you."); return; }
+    screen("addScreen"); $("title").textContent = "Add friend"; $("sub").textContent = "Do this once, in person if you can.";
+    $("theirCode").value = ""; $("addErr").textContent = "";
+    $("scanBtn").style.display = ("BarcodeDetector" in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ? "" : "none";
+    await renderMyCode(false);
+  }
+  async function renderMyCode(force) {
+    var c = await PChat.myCode(force); myCodeText = c.text;
+    $("myCodeText").textContent = c.text;
+    try { $("myQr").innerHTML = QRGen.svg(c.text, 220); } catch (e) { $("myQr").textContent = ""; }
+  }
+  function newMyCode() { renderMyCode(true); toast("New code made. The old one no longer works."); }
+  function copyText(t, okMsg) {
+    var done = function () { toast(okMsg || "Copied"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); });
+    else { fallbackCopy(t); done(); }
+  }
+  function fallbackCopy(t) { var a = document.createElement("textarea"); a.value = t; a.style.position = "fixed"; a.style.opacity = "0"; document.body.appendChild(a); a.select(); try { document.execCommand("copy"); } catch (e) {} document.body.removeChild(a); }
+  function copyMyCode() { copyText(myCodeText, "Code copied"); }
+  function shareMyCode() { handoff(myCodeText, "My friend code"); }
+  // Hand text to any app through the Android share sheet; if that isn't available, copy it.
+  async function handoff(text, title) {
+    if (navigator.share) {
+      try { await navigator.share({ title: title || "Message", text: text }); return true; }
+      catch (e) { if (e && e.name === "AbortError") return false; }
+    }
+    copyText(text, "Copied. Paste it into any chat app."); return true;
+  }
+  async function pasteInto(id) {
+    try {
+      var t = await navigator.clipboard.readText();
+      if (t) { $(id).value = t; return; }
+    } catch (e) {}
+    $(id).focus(); toast("Long-press the box and choose Paste.");
+  }
+  async function connectFriend() {
+    $("addErr").textContent = "";
+    try {
+      var f = await PChat.addFriendFromCode($("theirCode").value);
+      toast("Added " + f.name + " ✓");
+      openThread(f.id, true);
+    } catch (e) { $("addErr").textContent = e.message; }
+  }
+
+  /* ---------- scan (only where the phone supports it) ---------- */
+  async function startScan() {
+    try {
+      var det = new BarcodeDetector({ formats: ["qr_code"] });
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      var v = $("scanVideo"); v.srcObject = scanStream; await v.play();
+      $("scanBox").classList.add("show");
+      scanTimer = setInterval(async function () {
+        try {
+          var r = await det.detect(v);
+          for (var i = 0; i < r.length; i++) if (/CATPAIR1:/.test(r[i].rawValue)) { $("theirCode").value = r[i].rawValue; stopScan(); connectFriend(); return; }
+        } catch (e) {}
+      }, 300);
+    } catch (e) { stopScan(); toast("Couldn't open the camera. Paste the code instead."); }
+  }
+  function stopScan() {
+    clearInterval(scanTimer); scanTimer = null;
+    if (scanStream) { scanStream.getTracks().forEach(function (t) { t.stop(); }); scanStream = null; }
+    $("scanBox").classList.remove("show");
+  }
+
+  /* ---------- paste / receive ---------- */
+  function openPaste() { $("pasteBox").value = ""; $("pasteErr").textContent = ""; openSheet("pasteSheet"); }
+  async function openPasted() {
+    var text = $("pasteBox").value;
+    if (!text.trim()) { $("pasteErr").textContent = "Paste a message first."; return; }
+    var r = await receive(text);
+    if (r) closeSheet();
+  }
+  var handledHashes = {};
+  async function receive(text, quiet) {
+    try {
+      var r = await PChat.decrypt(text);
+      markHandled(text);
+      toast(r.firstContact ? r.friend.name + " connected to you" : "Message from " + r.friend.name);
+      await openThread(r.friend.id);
+      return true;
+    } catch (e) {
+      if (quiet) return false;
+      var msg = e.message || "Couldn't open that message.";
+      if (e.code === "nofriend") msg += " Add them first with “Add friend”, then paste it again.";
+      $("pasteErr").textContent = msg; if (!$("pasteSheet").classList.contains("show")) toast(msg);
+      return false;
+    }
+  }
+  function markHandled(text) { handledHashes[String(text).slice(0, 120)] = 1; }
+  // When the app opens, offer any private message that was just copied from another app.
+  async function checkClipboard() {
+    var ban = $("clipBanner"); ban.style.display = "none";
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) return;
+      var t = await navigator.clipboard.readText();
+      if (!t || !PChat.looksEncrypted(t) || handledHashes[String(t).slice(0, 120)]) return;
+      ban.innerHTML = 'A private message is on your clipboard. <button class="pbtn small primary" style="margin-left:6px;" id="clipOpen">Open it</button>';
+      ban.style.display = "block";
+      $("clipOpen").onclick = async function () { var ok = await receive(t, false); ban.style.display = "none"; };
+    } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && $("listScreen").style.display !== "none") checkClipboard(); });
+
+  /* ---------- conversation ---------- */
+  async function openThread(id, justAdded) {
+    cur = await PChat.getFriend(id); if (!cur) return showList();
+    screen("threadScreen"); $("title").textContent = cur.name; $("sub").textContent = "Private · end-to-end encrypted";
+    renderConfirm();
+    await renderThread();
+    if (pendingSend) { var ps = pendingSend; pendingSend = null; await sendBody(ps.body); return; }
+    if (justAdded) toast("Send a first message. It also connects your friend's phone.");
+  }
+  async function renderConfirm() {
+    var b = $("confirmBanner");
+    if (!cur || cur.confirmed) { b.style.display = "none"; return; }
+    var sn = await PChat.safetyNumber(cur);
+    b.innerHTML = '<b>' + esc(cur.name) + '</b> connected to you using your code. Check it is really them: ask them to read out their safety number.<div class="safety" style="font-size:18px;">' + esc(sn) + '</div><div class="btn-row"><button class="pbtn small primary" onclick="confirmCur()">It matches</button><button class="pbtn small danger" onclick="doRemove()">Not them, remove</button></div>';
+    b.style.display = "block";
+  }
+  async function confirmCur() { await PChat.confirmFriend(cur.id); cur.confirmed = true; renderConfirm(); toast("Confirmed"); }
+  async function renderThread() {
+    var msgs = await PChat.messages(cur.id), box = $("thread"); box.innerHTML = "";
+    msgs.forEach(function (m) { box.appendChild(bubble(m)); });
+    var last = msgs[msgs.length - 1]; PChat.markRead(cur.id, last ? last.ts : Date.now());
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+  function bubble(m) {
+    var div = document.createElement("div"); div.className = "bubble " + (m.dir === "out" ? "me" : "them");
+    var b = m.body || {}, html = "";
+    if (b.k === "m") html += '<div>' + esc(b.text) + '</div>';
+    if (b.k === "e") {
+      var e = b.entry || {};
+      html += '<div class="share-card"><div class="t">' + esc(e.type || "Entry") + '</div><div class="n">' + esc(entryName(e)) + '</div>' +
+        (e.cinemaName || e.cuisineType || e.drinkType || e.genre ? '<div class="items">' + esc(e.genre || e.cinemaName || e.cuisineType || e.drinkType) + '</div>' : '') +
+        (m.dir === "in" ? '<button data-act="saveE">' + (m.saved ? "Saved ✓" : "Save to my entries") + '</button>' : '') + '</div>';
+    }
+    if (b.k === "l") {
+      var items = b.items || [];
+      html += '<div class="share-card"><div class="t">List · ' + items.length + ' item' + (items.length === 1 ? "" : "s") + '</div><div class="n">' + esc(b.name || "List") + '</div><div class="items">' +
+        esc(items.slice(0, 4).map(entryName).join(", ") + (items.length > 4 ? "…" : "")) + '</div>' +
+        (m.dir === "in" ? '<button data-act="saveL">' + (m.saved ? "Added ✓" : "Add to my lists") + '</button>' : '') + '</div>';
+    }
+    html += '<time>' + esc(timeLabel(m.ts)) + (m.dir === "out" ? " · locked" : "") + '</time>';
+    if (m.dir === "out" && m.wire) html += '<div class="acts"><button data-act="share">Send again</button><button data-act="copy">Copy</button><button data-act="qr">QR</button></div>';
+    div.innerHTML = html;
+    div.querySelectorAll("[data-act]").forEach(function (btn) {
+      btn.onclick = function () {
+        var a = btn.getAttribute("data-act");
+        if (a === "share") handoff(m.wire, "Private message");
+        else if (a === "copy") copyText(m.wire, "Copied. Paste it into any chat app.");
+        else if (a === "qr") showMsgQr(m.wire);
+        else if (a === "saveE") { saveEntry(b.entry); PChat.markSaved(m.mid); btn.textContent = "Saved ✓"; btn.disabled = true; }
+        else if (a === "saveL") { var n = saveList(b); PChat.markSaved(m.mid); btn.textContent = "Added ✓"; btn.disabled = true; toast("Added as “" + n + "”"); }
+      };
+    });
+    return div;
+  }
+  function showMsgQr(wire) {
+    try { $("msgQr").innerHTML = QRGen.svg(wire, 260); $("qrNote").textContent = ""; }
+    catch (e) { $("msgQr").innerHTML = ""; $("qrNote").textContent = "This message is too long for a QR code. Use Send again or Copy instead."; }
+    openSheet("qrSheet");
+  }
+  async function sendBody(body) {
+    if (!cur) return;
+    try {
+      var r = await PChat.send(cur.id, body);
+      cur = r.friend; await renderThread();
+      var ok = await handoff(r.text, "Private message");
+      if (!ok) toast("Not sent yet. Use “Send again” under the message.");
+    } catch (e) { toast("Couldn't lock the message: " + (e.message || e)); }
+  }
+  function sendText() {
+    var i = $("msgInput"), t = i.value.trim(); if (!t) return;
+    i.value = ""; sendBody({ k: "m", text: t });
+  }
+  $("msgInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); sendText(); } });
+
+  /* ---------- sending entries and lists ---------- */
+  var DROP = ["id", "remindAt", "reminded", "checked", "checkedAt", "dateAdded", "lastWatchedAt", "children", "index"];
+  function cleanEntry(e) { var o = {}; for (var k in e) if (DROP.indexOf(k) < 0) o[k] = e[k]; return o; }
+  function openPicker() { $("pickWho").textContent = cur ? cur.name : ""; $("pickSearch").value = ""; pickTab("e"); openSheet("pickSheet"); }
+  function pickTab(t) { pickMode = t; $("segE").classList.toggle("on", t === "e"); $("segL").classList.toggle("on", t === "l"); renderPick(); }
+  function renderPick() {
+    var box = $("pickList"), q = $("pickSearch").value.trim().toLowerCase(); box.innerHTML = "";
+    if (pickMode === "e") {
+      var es = (lsGet("entries") || []).slice().reverse().filter(function (e) { return !q || entryName(e).toLowerCase().indexOf(q) >= 0; });
+      if (!es.length) box.innerHTML = '<p class="muted">Nothing found.</p>';
+      es.slice(0, 60).forEach(function (e) {
+        var b = document.createElement("button"); b.className = "pick-row"; b.textContent = entryName(e);
+        var s = document.createElement("small"); s.textContent = e.type || "Other"; b.appendChild(s);
+        b.onclick = function () { closeSheet(); sendBody({ k: "e", entry: cleanEntry(e) }); };
+        box.appendChild(b);
+      });
+    } else {
+      var ls = lsGet("lists") || {}, names = Object.keys(ls).filter(function (n) { return !q || n.toLowerCase().indexOf(q) >= 0; });
+      if (!names.length) box.innerHTML = '<p class="muted">You have no lists yet.</p>';
+      names.forEach(function (n) {
+        var items = (ls[n] && ls[n].items) || [];
+        var b = document.createElement("button"); b.className = "pick-row"; b.textContent = n;
+        var s = document.createElement("small"); s.textContent = items.length + " item" + (items.length === 1 ? "" : "s"); b.appendChild(s);
+        b.onclick = function () { closeSheet(); sendBody({ k: "l", name: n, category: (ls[n] && ls[n].category) || "Uncategorized", items: items.slice(0, 80).map(cleanEntry) }); };
+        box.appendChild(b);
+      });
+    }
+  }
+  function newId() { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : "e" + Date.now() + Math.random().toString(16).slice(2); }
+  function sameEntry(a, b) { return (a.type || "") === (b.type || "") && entryName(a).toLowerCase() === entryName(b).toLowerCase(); }
+  function saveEntry(entry) {
+    var all = lsGet("entries") || [], hit = all.filter(function (x) { return sameEntry(x, entry); })[0];
+    if (hit) { toast("You already have this one"); return hit; }
+    var copy = cleanEntry(entry); copy.id = newId(); copy.checked = false; copy.dateAdded = new Date().toISOString();
+    all.push(copy); lsSet("entries", all); toast("Saved to your entries"); return copy;
+  }
+  function saveList(b) {
+    var lists = lsGet("lists") || {}, name = b.name || "Shared list", n = name, i = 2;
+    while (lists[n]) n = name + " (" + i++ + ")";
+    var all = lsGet("entries") || [], items = [];
+    (b.items || []).forEach(function (it) {
+      var hit = all.filter(function (x) { return sameEntry(x, it); })[0];
+      if (!hit) { hit = cleanEntry(it); hit.id = newId(); hit.checked = false; hit.dateAdded = new Date().toISOString(); all.push(hit); }
+      items.push(Object.assign({}, hit));
+    });
+    lists[n] = { category: b.category || "Uncategorized", items: items };
+    lsSet("entries", all); lsSet("lists", lists);
+    return n;
+  }
+
+  /* ---------- friend info ---------- */
+  async function openFriendMenu() {
+    if (!cur) return;
+    $("infoName").textContent = cur.name; $("renameInput").value = cur.name;
+    $("safety").textContent = await PChat.safetyNumber(cur);
+    openSheet("infoSheet");
+  }
+  async function doRename() { await PChat.renameFriend(cur.id, $("renameInput").value); cur = await PChat.getFriend(cur.id); $("title").textContent = cur.name; closeSheet(); toast("Saved"); }
+  async function doRemove() {
+    if (!cur) return;
+    if (!confirm("Remove " + cur.name + " and all your messages with them from this phone?")) return;
+    await PChat.removeFriend(cur.id); closeSheet(); showList();
+  }
+
+  /* ---------- start ---------- */
+  (async function () {
+    if (!PChat.supported) { $("unsupported").style.display = "block"; return; }
+    var hash = location.hash || "";
+    var m = /^#(send|sendlist)=(.+)$/.exec(hash);
+    if (m) {
+      var key = decodeURIComponent(m[2]);
+      if (m[1] === "send") {
+        var all = lsGet("entries") || [], e = all.filter(function (x) { return x.id == key; })[0];
+        if (!e) { var L = lsGet("lists") || {}; for (var n in L) { e = ((L[n] && L[n].items) || []).filter(function (x) { return x.id == key; })[0]; if (e) break; } }
+        if (e) pendingSend = { label: entryName(e), body: { k: "e", entry: cleanEntry(e) } };
+      } else {
+        var ls = lsGet("lists") || {}, l = ls[key], en = lsGet("entries") || [];
+        if (l) pendingSend = { label: key, body: { k: "l", name: key, category: l.category || "Uncategorized", items: (l.items || []).slice(0, 80).map(function (it) { return cleanEntry(en.filter(function (x) { return x.id == it.id; })[0] || it); }) } };
+      }
+    }
+    await showList();
+    if (hash === "#paste") openPaste();
+  })();
+</script>
+</body>
+</html>

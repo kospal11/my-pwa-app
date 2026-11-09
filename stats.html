@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Statistics</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css?v=48">
+  <script src="theme.js"></script>
+  <meta name="theme-color" content="#0F1013">
+  <style>
+    .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 8px; }
+    .kpi { background: var(--surface); border-radius: 18px; padding: 14px 12px; }
+    .kpi .num { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--accent); }
+    .kpi .lbl { color: var(--muted); font-size: 0.78rem; font-weight: 700; margin-top: 6px; }
+    .card-block { background: var(--surface); border-radius: 20px; padding: 16px; margin-bottom: 14px; }
+    .card-block h2 { font-size: 1rem; font-weight: 800; margin: 0 0 12px; }
+    .foot { color: var(--muted); font-size: 0.8rem; margin-top: 10px; }
+    .empty { color: var(--muted); font-size: 0.9rem; }
+
+    .top-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+    .top-row:first-of-type { border-top: 0; }
+    .rank { width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2); font-weight: 800; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; flex: none; }
+    .top-row .nm { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top-row .tg { color: var(--muted); font-size: 0.78rem; }
+    .top-row .st { margin-left: auto; flex: none; font-size: 0.85rem; }
+
+    .bar-row { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 10px; margin: 7px 0; font-size: 0.88rem; }
+    .bar-row .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .bar-track { background: var(--surface-2); border-radius: 6px; height: 12px; overflow: hidden; }
+    .bar-fill { background: var(--accent); height: 100%; border-radius: 0 4px 4px 0; min-width: 4px; }
+    .bar-row .val { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 66px; text-align: right; }
+
+    .cols { display: flex; align-items: flex-end; gap: 10px; height: 130px; margin-top: 6px; }
+    .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+    .col .v { font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; }
+    .col .b { width: 100%; max-width: 34px; background: var(--accent); border-radius: 6px 6px 0 0; min-height: 3px; }
+    .col .m { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+    .col.is-now .m { color: var(--text); font-weight: 800; }
+    .range-row { padding-top: 0; margin-bottom: 14px; }
+  </style>
+</head>
+
+<body class="app-body">
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-9z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.3" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app-wrap">
+    <div class="screen-head">
+      <button class="back-btn" onclick="window.location.href='index.html'" aria-label="Back"><svg class="ic"><use href="#i-back"/></svg></button>
+      <div class="grow">
+        <h1 class="screen-title sm">Statistics</h1>
+        <div class="screen-sub" id="rangeLabel"></div>
+      </div>
+    </div>
+
+    <div class="chip-row range-row">
+      <button class="chip is-active" id="r-month" onclick="setRange('month')">This month</button>
+      <button class="chip" id="r-all" onclick="setRange('all')">All time</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="num" id="kFilms">0</div><div class="lbl">Films watched</div></div>
+      <div class="kpi"><div class="num" id="kSeries">0</div><div class="lbl">Series finished</div></div>
+      <div class="kpi"><div class="num" id="kPlaces">0</div><div class="lbl">Places visited</div></div>
+      <div class="kpi"><div class="num" id="kTotal">0</div><div class="lbl">Entries saved</div></div>
+    </div>
+    <div class="foot" id="undatedNote" style="margin:0 4px 14px;"></div>
+
+    <div class="card-block">
+      <h2>Top-rated places</h2>
+      <div id="topPlaces"></div>
+    </div>
+
+    <div class="card-block">
+      <h2>Favourite genres</h2>
+      <div id="genreBars"></div>
+      <div class="foot">Number of films per genre, with your average rating.</div>
+    </div>
+
+    <div class="card-block">
+      <h2>Films watched per month</h2>
+      <div class="cols" id="monthCols"></div>
+      <div class="foot" id="monthNote"></div>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab" onclick="window.location.href='index.html'"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+    <button class="tab" onclick="window.location.href='index.html#search'"><svg class="ic"><use href="#i-search"/></svg><span>Search</span></button>
+    <button class="tab" onclick="localStorage.removeItem('currentList');window.location.href='list-viewer-new.html'"><svg class="ic"><use href="#i-list"/></svg><span>My lists</span></button>
+    <button class="tab active" onclick="window.location.href='index.html#more'"><svg class="ic"><use href="#i-more"/></svg><span>More</span></button>
+  </nav>
+
+<script>
+  const byId = id => document.getElementById(id);
+  let range = "month";
+
+  function loadEntries() {
+    try { return JSON.parse(localStorage.getItem("entries")) || []; } catch (e) { return []; }
+  }
+  const nameOf = e => e.placeName || e.movieName || e.otherName || "Entry";
+
+  // "Visited / watched" = ticked off, or given a date. The date is the one you typed, else the day you ticked it.
+  const isVisited = e => !!(e.checked || e.dateVisited);
+  function parseWhen(v) {
+    if (!v) return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);   // date-only = that day in local time
+    const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(v);
+    return isNaN(d) ? null : d;
+  }
+  function visitDate(e) { return parseWhen(e.dateVisited || e.checkedAt || ""); }
+  const sameMonth = (d, ref) => d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
+
+  function setRange(r) {
+    range = r;
+    byId("r-month").classList.toggle("is-active", r === "month");
+    byId("r-all").classList.toggle("is-active", r === "all");
+    render();
+  }
+
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function render() {
+    const all = loadEntries();
+    const now = new Date();
+    byId("rangeLabel").textContent = range === "month"
+      ? now.toLocaleDateString([], { month: "long", year: "numeric" })
+      : "Everything you've saved";
+
+    const inRange = e => {
+      if (!isVisited(e)) return false;
+      if (range === "all") return true;
+      const d = visitDate(e);
+      return !!d && sameMonth(d, now);
+    };
+
+    const films = all.filter(e => e.type === "Cinema" && e.kind !== "tv");
+    const series = all.filter(e => e.type === "Cinema" && e.kind === "tv");
+    const places = all.filter(e => e.type === "Food" || e.type === "Drinks");
+
+    byId("kFilms").textContent = films.filter(inRange).length;
+    byId("kSeries").textContent = series.filter(inRange).length;
+    byId("kPlaces").textContent = places.filter(inRange).length;
+    byId("kTotal").textContent = all.length;
+
+    const undated = all.filter(e => (e.type === "Cinema" || e.type === "Food" || e.type === "Drinks") && isVisited(e) && !visitDate(e)).length;
+    byId("undatedNote").textContent = range === "month" && undated
+      ? undated + " ticked " + (undated === 1 ? "entry has" : "entries have") + " no date, so " + (undated === 1 ? "it isn't" : "they aren't") + " in this month. Edit an entry to add a date."
+      : "";
+
+    renderTopPlaces(places);
+    renderGenres(films);
+    renderMonths(films, now);
+  }
+
+  function renderTopPlaces(places) {
+    const wrap = byId("topPlaces");
+    wrap.innerHTML = "";
+    const rated = places.filter(e => Number(e.Rating) > 0).sort((a, b) =>
+      (Number(b.Rating) - Number(a.Rating)) ||
+      (((parseWhen(b.dateVisited || b.checkedAt || b.dateAdded || "") || 0) - (parseWhen(a.dateVisited || a.checkedAt || a.dateAdded || "") || 0))) ||
+      nameOf(a).localeCompare(nameOf(b))
+    ).slice(0, 5);
+    if (!rated.length) { wrap.appendChild(el("div", "empty", "Rate some Food or Drinks entries to see your favourites here.")); return; }
+    rated.forEach((e, i) => {
+      const row = el("div", "top-row");
+      row.appendChild(el("div", "rank", String(i + 1)));
+      const mid = el("div");
+      mid.style.minWidth = "0";
+      mid.appendChild(el("div", "nm", nameOf(e)));
+      mid.appendChild(el("div", "tg", e.type + (e.cuisineType || e.drinkType ? " · " + (e.cuisineType || e.drinkType) : "")));
+      row.appendChild(mid);
+      const st = el("div", "st", "⭐".repeat(Number(e.Rating)));
+      st.title = e.Rating + " out of 5";
+      row.appendChild(st);
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderGenres(films) {
+    const wrap = byId("genreBars");
+    wrap.innerHTML = "";
+    const map = new Map();
+    films.forEach(f => {
+      String(f.genre || f.cinemaName || "").split(",").map(g => g.trim()).filter(Boolean).forEach(g => {
+        const key = g.toLowerCase();
+        if (!map.has(key)) map.set(key, { name: g, n: 0, sum: 0, rated: 0 });
+        const o = map.get(key);
+        o.n++;
+        if (Number(f.Rating) > 0) { o.sum += Number(f.Rating); o.rated++; }
+      });
+    });
+    const list = Array.from(map.values()).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 6);
+    if (!list.length) { wrap.appendChild(el("div", "empty", "Add some films with a genre to see which ones you like most.")); return; }
+    const max = list[0].n;
+    list.forEach(g => {
+      const row = el("div", "bar-row");
+      row.appendChild(el("div", "lab", g.name));
+      const track = el("div", "bar-track");
+      const fill = el("div", "bar-fill");
+      fill.style.width = Math.max(4, Math.round(g.n / max * 100)) + "%";
+      track.appendChild(fill);
+      row.appendChild(track);
+      const avg = g.rated ? " · ★" + (g.sum / g.rated).toFixed(1) : "";
+      row.appendChild(el("div", "val", g.n + avg));
+      row.title = g.name + ": " + g.n + (g.n === 1 ? " film" : " films") + (g.rated ? ", average rating " + (g.sum / g.rated).toFixed(1) : "");
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderMonths(films, now) {
+    const wrap = byId("monthCols");
+    wrap.innerHTML = "";
+    const months = [];
+    for (let i = 5; i >= 0; i--) months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    const counts = months.map(m => films.filter(f => isVisited(f) && visitDate(f) && sameMonth(visitDate(f), m)).length);
+    const max = Math.max(1, ...counts);
+    months.forEach((m, i) => {
+      const col = el("div", "col" + (i === months.length - 1 ? " is-now" : ""));
+      col.appendChild(el("div", "v", String(counts[i])));
+      const bar = el("div", "b");
+      bar.style.height = Math.round(counts[i] / max * 90) + "px";
+      col.appendChild(bar);
+      col.appendChild(el("div", "m", m.toLocaleDateString([], { month: "short" })));
+      col.title = m.toLocaleDateString([], { month: "long", year: "numeric" }) + ": " + counts[i] + (counts[i] === 1 ? " film" : " films");
+      wrap.appendChild(col);
+    });
+    const total = counts.reduce((a, b) => a + b, 0);
+    byId("monthNote").textContent = total ? "" : "Tick a film as watched, or give it a date, and it will show up here.";
+  }
+
+  render();
+</script>
+</body>
+</html>
