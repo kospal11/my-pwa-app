@@ -2356,24 +2356,40 @@ function deleteEntry(id) {
 	  return `${baseUrl}${encodeURIComponent(location)}`;
 	}
 	
+	// Saves a text file. In the Android app: write to cache, then open the native share sheet
+	// (Drive, email, Files...). In a browser: normal download.
+	async function saveExportFile(name, text) {
+	  const P = window.Capacitor && Capacitor.Plugins;
+	  if (P && P.Filesystem && P.Share) {
+		try {
+		  const res = await P.Filesystem.writeFile({ path: name, data: text, directory: "CACHE", encoding: "utf8" });
+		  await P.Share.share({ title: name, files: [res.uri], dialogTitle: "Save " + name });
+		  return;
+		} catch (e) {
+		  if (e && /cancel/i.test(String(e.message || e))) return;
+		  alert("Couldn't save the file: " + (e && e.message ? e.message : e));
+		  return;
+		}
+	  }
+	  const blob = new Blob([text], { type: "application/json" });
+	  const url = URL.createObjectURL(blob);
+	  const link = document.createElement("a");
+	  link.href = url;
+	  link.download = name;
+	  document.body.appendChild(link);
+	  link.click();
+	  document.body.removeChild(link);
+	}
+
 	function exportEntries() {
 	  const entries = localStorage.getItem("entries");
 	  if (!entries) {
 		alert("No entries found to export.");
 		return;
 	  }
-
-	  const blob = new Blob([entries], { type: "application/json" });
-	  const url = URL.createObjectURL(blob);
-
-	  const link = document.createElement("a");
-	  link.href = url;
-	  link.download = "entries.json";
-	  document.body.appendChild(link);
-	  link.click();
-	  document.body.removeChild(link);
+	  saveExportFile("entries.json", entries);
 	}
-	
+
 	async function exportAllData() {
 	  const entries = JSON.parse(localStorage.getItem("entries")) || [];
 	  const lists = JSON.parse(localStorage.getItem("lists")) || {};
@@ -2385,15 +2401,7 @@ function deleteEntry(id) {
 	  try { const photos = await Photos.exportAll(); if (photos.length) fullExport.photos = photos; } catch (e) {}
 	  try { const pm = Lookup.exportPosters(); if (Object.keys(pm).length) fullExport.posters = pm; } catch (e) {}
 
-	  const blob = new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" });
-	  const url = URL.createObjectURL(blob);
-
-	  const link = document.createElement("a");
-	  link.href = url;
-	  link.download = "full-export.json";
-	  document.body.appendChild(link);
-	  link.click();
-	  document.body.removeChild(link);
+	  await saveExportFile("full-export.json", JSON.stringify(fullExport, null, 2));
 	}
 
 	function triggerFileImport() {
