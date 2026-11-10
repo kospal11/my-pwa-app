@@ -3784,5 +3784,26 @@ function jotCollapse(on) {
 
   </script>
   <script>document.addEventListener("DOMContentLoaded", function () { try { SendCard.seedAthens(window.ATHENS_SEED); SendCard.watchClipboard(); } catch (e) {} });</script>
+  <script>
+  // Fresh install: load the bundled seed-data.json once (only in the app, where the file is shipped).
+  // Does nothing on the website, where the file doesn't exist, or if the phone already has entries.
+  (function () {
+    var FLAG = "seed.bundle.v1";
+    try {
+      if (localStorage.getItem(FLAG)) return;
+      var cur = JSON.parse(localStorage.getItem("entries") || "[]") || [];
+      if (cur.length) { localStorage.setItem(FLAG, "skipped"); return; }
+    } catch (e) { return; }
+    fetch("seed-data.json").then(function (r) { if (!r.ok) throw new Error("no seed"); return r.json(); }).then(function (d) {
+      try {
+        localStorage.setItem("entries", JSON.stringify(d.entries || []));
+        localStorage.setItem("lists", JSON.stringify(d.lists || {}));
+        localStorage.setItem(FLAG, "done");
+        if (window.Lookup && d.posters) Lookup.importPosters(d.posters);
+        setTimeout(function () { location.reload(); }, 1500);
+      } catch (e) {}
+    }).catch(function () {});
+  })();
+  </script>
 </body>
 </html>
