@@ -756,16 +756,24 @@ let heroT = "pick", heroList = [], heroIdx = 0, heroTimer = null, heroHold = nul
     if (!window.Lookup) { body.innerHTML = '<p class="hero-text">Lookup is not available in this app build.</p>'; return; }
     try {
       var now = new Date(), today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()), year = now.getFullYear();
-      var films = await Lookup.releases(year).then(function (all) {
-        var pick = all.filter(function (f) { return f.date > today; }).sort(function (a, b) { return a.date - b.date; }).slice(0, 20);
-        return Lookup.filmInfo(pick.map(function (f) { return f.wiki || f.title; })).then(function (info) {
-          return pick.map(function (f) { var i = info[f.wiki || f.title] || {}; return { title: f.title, when: f.date, kind: "film", poster: i.poster || "" }; });
-        });
+      var DAY = 864e5, rel = await Lookup.releases(year).catch(function () { return []; });
+      var soon = rel.filter(function (f) { return f.date > today; }).sort(function (a, b) { return a.date - b.date; }).slice(0, 20).map(function (f) { return { title: f.title, when: f.date, tag: "COMING SOON", wiki: f.wiki }; });
+      var theaters = rel.filter(function (f) { return f.date <= today && f.date >= today - 42 * DAY; }).sort(function (a, b) { return b.date - a.date; }).slice(0, 20).map(function (f) { return { title: f.title, when: f.date, tag: "IN THEATERS", wiki: f.wiki }; });
+      var latest = await Lookup.newFilms(year).catch(function () { return []; });
+      latest = latest.slice(0, 20).map(function (f) { return { title: f.title, year: f.year, genre: f.genre, poster: f.poster, tag: "LATEST ADDED" }; });
+      var infoKeys = soon.concat(theaters).map(function (f) { return f.wiki || f.title; });
+      var info = infoKeys.length ? await Lookup.filmInfo(infoKeys).catch(function () { return {}; }) : {};
+      var seen = {}, films = [];
+      soon.concat(theaters).forEach(function (f) {
+        var k = f.title.toLowerCase(); if (seen[k]) return; seen[k] = 1;
+        var i = info[f.wiki || f.title] || {};
+        films.push({ title: f.title, when: f.when, tag: f.tag, kind: "film", poster: i.poster || "", genre: Lookup.genreFromText ? Lookup.genreFromText(i.overview) : "", year: String(year) });
       });
+      latest.forEach(function (f) { var k = f.title.toLowerCase(); if (seen[k]) return; seen[k] = 1; films.push({ title: f.title, year: f.year, genre: f.genre, poster: f.poster, tag: f.tag, kind: "film" }); });
       var series = await Lookup.newSeries(year).then(function (all) {
         return all.filter(function (f) { return f.when > today; }).sort(function (a, b) { return a.when - b.when; }).slice(0, 20)
-          .map(function (f) { return { title: f.title, when: f.when, kind: "tv", poster: f.poster || "" }; });
-      });
+          .map(function (f) { return { title: f.title, when: f.when, tag: "SERIES", kind: "tv", poster: f.poster || "", genre: f.genre || "", year: f.year || "" }; });
+      }).catch(function () { return []; });
       var list = [];
       for (var k = 0; k < Math.max(films.length, series.length); k++) { if (films[k]) list.push(films[k]); if (series[k]) list.push(series[k]); }
       heroList = list; heroIdx = 0;
@@ -782,7 +790,7 @@ let heroT = "pick", heroList = [], heroIdx = 0, heroTimer = null, heroHold = nul
     tonight.newList = heroList;
     var saved = savedMovieNames().has(f.title.toLowerCase());
     body.innerHTML = '<div class="soon-item">' +
-      '<div class="soon-info"><div class="soon-kind">' + (f.kind === "tv" ? "SERIES" : "FILM") + ' · ' + nfDateLabel(f.when) + '</div>' +
+      '<div class="soon-info"><div class="soon-kind">' + (f.tag || (f.kind === "tv" ? "SERIES" : "FILM")) + (f.when ? ' · ' + nfDateLabel(f.when) : (f.year ? ' · ' + f.year : '')) + '</div>' +
       '<div class="soon-title">' + escHtml(f.title) + '</div>' +
       '<button type="button" class="btn-accent' + (saved ? ' saved' : '') + '" onclick="newFilmAdd(' + heroIdx + ', this)">' + (saved ? '✓ In your list' : '+ Add to list') + '</button></div>' +
       '<div class="soon-poster"' + (f.poster ? ' style="background-image:url(\'' + escHtml(f.poster) + '\')"' : '') + '></div></div>';
