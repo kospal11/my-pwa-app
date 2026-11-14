@@ -33,10 +33,14 @@
 <style id="hero-soon-css">
 #movieSuggestion { min-height: 92px; }
 .hero-actions { height: 48px; }
-.hero-tabs { display: inline-flex; gap: 4px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 4px; margin: 2px 0 10px; }
-.hero-tabs button { box-sizing: border-box; height: 32px; line-height: 1; border: 0; background: transparent; color: var(--muted, #9AA0AE); padding: 0 14px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
+.hero-tabs { display: inline-flex; gap: 4px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 4px; margin: 2px 0 0; }
+.hero { min-height: 268px; }
+.hero:has(#heroSoon:not([style*="none"])) .hero-body { display: flex; flex-direction: column; }
+.hero:has(#heroSoon:not([style*="none"])) .hero-actions { display: none; }
+#heroSoon { flex: 1; display: flex; flex-direction: column; justify-content: center; margin-bottom: 64px; }
+.hero-tabs button { box-sizing: border-box; height: 28px; line-height: 1; border: 0; background: transparent; color: var(--muted, #9AA0AE); padding: 0 12px; border-radius: 999px; font-weight: 700; font-size: .75rem; }
 .hero-tabs button.is-on { background: var(--accent, #FFA62B); color: var(--ink, #1A1206); }
-.soon-item { height: 92px; display: flex; flex-direction: column; justify-content: center; }
+.soon-item { height: auto; display: flex; flex-direction: column; justify-content: center; }
 .soon-info { flex: 1; min-width: 0; }
 .soon-poster { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 76px; aspect-ratio: 2 / 3; max-height: 82%; border-radius: 10px; background: #2a2d36 center / cover no-repeat; box-shadow: 0 6px 18px rgba(0,0,0,.45); }
 .hero:has(.soon-poster) .hero-body { padding-right: 108px; }
