@@ -34,9 +34,10 @@
 .hero-tabs { display: inline-flex; gap: 4px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 4px; margin: 2px 0 10px; }
 .hero-tabs button { border: 0; background: transparent; color: var(--muted, #9AA0AE); padding: 7px 14px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
 .hero-tabs button.is-on { background: var(--accent, #FFA62B); color: var(--ink, #1A1206); }
-.soon-item { display: flex; gap: 14px; align-items: center; }
+.soon-item { min-height: 118px; display: flex; flex-direction: column; justify-content: center; }
 .soon-info { flex: 1; min-width: 0; }
-.soon-poster { width: 100px; height: 146px; border-radius: 12px; background: #2a2d36 center / cover no-repeat; flex: none; margin-left: auto; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.soon-poster { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 76px; aspect-ratio: 2 / 3; max-height: 82%; border-radius: 10px; background: #2a2d36 center / cover no-repeat; box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+.hero:has(.soon-poster) .hero-body { padding-right: 108px; }
 .soon-kind { font-size: .7rem; letter-spacing: .12em; font-weight: 700; color: var(--muted, #9AA0AE); }
 .soon-title { font-size: 1.2rem; font-weight: 800; line-height: 1.15; margin: 3px 0 8px; }
 .soon-item .btn-accent { padding: 9px 14px; font-size: .85rem; }
