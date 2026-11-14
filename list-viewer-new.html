@@ -349,6 +349,15 @@
     items.forEach(function (it) { var s = statusOf(it, idx); if (c[s] !== undefined) c[s]++; });
     return " · " + c.plan + " plan · " + c.watching + " watching · " + c.watched + " watched";
   }
+  function statusBarHtml(items) {
+    var idx = entryIndex(), c = { plan: 0, watching: 0, watched: 0, none: 0 };
+    items.forEach(function (it) { c[statusOf(it, idx)]++; });
+    var total = items.length || 1;
+    var seg = [["plan", "#8DB5FF"], ["watching", "#FFA62B"], ["watched", "#6FD9A0"], ["none", "#2a2d36"]];
+    return '<div style="display:flex;height:6px;border-radius:99px;overflow:hidden;background:#2a2d36;margin-top:8px">' +
+      seg.map(function (d) { return c[d[0]] ? '<i style="display:block;height:100%;width:' + (c[d[0]] / total * 100).toFixed(1) + '%;background:' + d[1] + '"></i>' : ''; }).join("") +
+      '</div>';
+  }
   function setListStatus(s) { listStatusFilter = s; loadLists(); }
 
   function loadLists() {
@@ -441,7 +450,7 @@
 
 			<div class="list-meta">
 			  <div class="list-name">${escHtml(listName)}</div>
-			  <div class="list-count">${count} ${count === 1 ? "item" : "items"} · ${escHtml(category)}${category === "Cinema" ? statusSummary(list.items || []) : ""}</div>
+			  <div class="list-count">${count} ${count === 1 ? "item" : "items"} · ${escHtml(category)}${category === "Cinema" ? statusSummary(list.items || []) : ""}</div>${category === "Cinema" && count ? statusBarHtml(list.items || []) : ""}
 			</div>
 
 			<button class="icon-btn danger" aria-label="Delete list"
