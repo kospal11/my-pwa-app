@@ -247,12 +247,13 @@
 	  const entrySummary = buildEntrySummary(entry);
 
 	  return `
-		<li class="list-group-item bg-dark text-white entry-item">
+		<li class="list-group-item bg-dark text-white entry-item" data-name="${escHtml(Share.nameOf(entry))}">
 
 		  <div class="entry-header">
 			${Photos.thumbHtml(entry, '', "PhotoUI.openEntry('" + escHtml(entry.id) + "')")}
 			${content}
 
+			<button type="button" class="gv-more" aria-label="More">•••</button>
 			<button class="check-btn action-btn ${entry.checked ? 'checked' : ''}"
 					data-id="${escHtml(entry.id)}"
 					aria-label="Mark as done"
@@ -261,7 +262,7 @@
 			</button>
 		  </div>
 
-		  <div class="button-group">
+		  <div class="button-group button-groups">
 
 			<a href="${googleSearchLink}" target="_blank" rel="noopener" class="icon-btn" aria-label="Search on Google">
 			  <img src="https://www.google.com/favicon.ico" alt="">
@@ -360,6 +361,34 @@
   }
   function setListStatus(s) { listStatusFilter = s; loadLists(); }
 
+  // ---- Same grid / small / big view as Movies & TV (shares the "viewMode" setting) ----
+  function viewSwitchHtml(v) {
+    function b(k, label, icon) { return '<button type="button" data-v="' + k + '" class="' + (v === k ? "on" : "") + '" aria-label="' + label + '" title="' + label + '">' + icon + '</button>'; }
+    return '<div class="view-switch" role="group" aria-label="How to show the entries">' +
+      b("grid", "Grid view", '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>') +
+      b("small", "Small icons", '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="3" y="4.5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16.5" width="18" height="3" rx="1.5"/></svg>') +
+      b("big", "Big icons", '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="13" width="18" height="8" rx="2"/></svg>') +
+      '</div>';
+  }
+  function setViewMode(v) {
+    if (["grid", "small", "big"].indexOf(v) < 0) v = "big";
+    try { localStorage.setItem("viewMode", v); } catch (e) {}
+    loadLists();
+  }
+  document.addEventListener("click", function (e) {
+    var sw = e.target.closest(".view-switch button");
+    if (sw) { setViewMode(sw.dataset.v); return; }
+    var mo = e.target.closest(".gv-more");
+    if (mo) {
+      e.preventDefault(); e.stopPropagation();
+      var li = mo.closest(".entry-item"), was = li.classList.contains("menu-open");
+      document.querySelectorAll(".entry-item.menu-open").forEach(function (x) { x.classList.remove("menu-open"); });
+      if (!was) li.classList.add("menu-open");
+      return;
+    }
+    if (!e.target.closest(".entry-item.menu-open .button-groups")) document.querySelectorAll(".entry-item.menu-open").forEach(function (x) { x.classList.remove("menu-open"); });
+  });
+
   function loadLists() {
 	  const container = document.getElementById("listsContainer");
 	  const title = document.getElementById("listTitle");
@@ -389,7 +418,8 @@
 		document.getElementById("shareListBtn").style.display = "";
 		filters.style.display = "none";
 
-		const view = (function () { try { return localStorage.getItem("listView") || "list"; } catch (e) { return "list"; } })();
+		const view = (function () { try { return localStorage.getItem("viewMode") || "big"; } catch (e) { return "big"; } })();
+		document.body.dataset.view = view;
 		const idx = entryIndex();
 		const tagged = items.map((item, i) => ({ item: item, index: i, st: statusOf(item, idx) }));
 		const isCinema = lists[selected].category === "Cinema";
@@ -397,12 +427,10 @@
 		const chips = isCinema ? statusChipsHtml(tagged) : "";
 		if (!items.length) {
 		  container.innerHTML = `<p class="empty-note">Nothing in this list yet.</p>`;
-		} else if (view === "gallery") {
-		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") + chips + PhotoUI.galleryHtml(shown.map(t => t.item));
-		  Photos.hydrate(container);
 		} else {
-		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") + chips + 
-			(shown.length ? `<ul class="list-group">${shown.map(t => formatEntry({ ...t.item, index: t.index })).join("")}</ul>` : `<p class="empty-note">Nothing with this status.</p>`);
+		  container.innerHTML = viewSwitchHtml(view) + chips +
+			(shown.length ? `<ul class="list-group" id="movieList">${shown.map(t => formatEntry({ ...t.item, index: t.index })).join("")}</ul>` : `<p class="empty-note">Nothing with this status.</p>`);
+		  Photos.hydrate(container);
 		}
 		return;
 	  }
