@@ -317,7 +317,41 @@
 	}
 
 
-	function loadLists() {
+	// ---- Status (plan / watching / watched) for films inside a list ----
+  // A list keeps its own copy of each film, so the live entry is found by type + name.
+  var listStatusFilter = "All";
+  function entryKey(e) { return e.type + "|" + String(e.type === "Cinema" ? e.movieName : e.placeName || "").trim().toLowerCase(); }
+  function entryIndex() {
+    var m = new Map();
+    try {
+      (JSON.parse(localStorage.getItem("entries")) || []).forEach(function (e) { var k = entryKey(e); if (!m.has(k)) m.set(k, e); });
+    } catch (err) {}
+    return m;
+  }
+  function statusOf(item, idx) {
+    var live = idx.get(entryKey(item));
+    if (live ? live.checked : item.checked) return "watched";
+    var s = live ? live.tvStatus : null;
+    if (s === "plan") return "plan";
+    if (s === "watching" || s === "paused") return "watching";
+    return "none";
+  }
+  function statusChipsHtml(tagged) {
+    var c = { All: tagged.length, plan: 0, watching: 0, watched: 0 };
+    tagged.forEach(function (t) { if (c[t.st] !== undefined) c[t.st]++; });
+    var defs = [["All", "All"], ["plan", "Plan"], ["watching", "Watching"], ["watched", "Watched"]];
+    return '<div style="display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px">' +
+      defs.map(function (d) { return '<button type="button" class="chip' + (listStatusFilter === d[0] ? ' is-active' : '') + '" onclick="setListStatus(\'' + d[0] + '\')">' + d[1] + ' ' + c[d[0]] + '</button>'; }).join("") +
+      '</div>';
+  }
+  function statusSummary(items) {
+    var idx = entryIndex(), c = { plan: 0, watching: 0, watched: 0 };
+    items.forEach(function (it) { var s = statusOf(it, idx); if (c[s] !== undefined) c[s]++; });
+    return " · " + c.plan + " plan · " + c.watching + " watching · " + c.watched + " watched";
+  }
+  function setListStatus(s) { listStatusFilter = s; loadLists(); }
+
+  function loadLists() {
 	  const container = document.getElementById("listsContainer");
 	  const title = document.getElementById("listTitle");
 	  const sub = document.getElementById("listSub");
@@ -347,14 +381,19 @@
 		filters.style.display = "none";
 
 		const view = (function () { try { return localStorage.getItem("listView") || "list"; } catch (e) { return "list"; } })();
+		const idx = entryIndex();
+		const tagged = items.map((item, i) => ({ item: item, index: i, st: statusOf(item, idx) }));
+		const isCinema = lists[selected].category === "Cinema";
+		const shown = (isCinema && listStatusFilter !== "All") ? tagged.filter(t => t.st === listStatusFilter) : tagged;
+		const chips = isCinema ? statusChipsHtml(tagged) : "";
 		if (!items.length) {
 		  container.innerHTML = `<p class="empty-note">Nothing in this list yet.</p>`;
 		} else if (view === "gallery") {
-		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") + PhotoUI.galleryHtml(items);
+		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") + chips + PhotoUI.galleryHtml(shown.map(t => t.item));
 		  Photos.hydrate(container);
 		} else {
-		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") +
-			`<ul class="list-group">${items.map((item, index) => formatEntry({ ...item, index })).join("")}</ul>`;
+		  container.innerHTML = PhotoUI.viewToggleHtml(view, "setListView") + chips + 
+			(shown.length ? `<ul class="list-group">${shown.map(t => formatEntry({ ...t.item, index: t.index })).join("")}</ul>` : `<p class="empty-note">Nothing with this status.</p>`);
 		}
 		return;
 	  }
@@ -402,7 +441,7 @@
 
 			<div class="list-meta">
 			  <div class="list-name">${escHtml(listName)}</div>
-			  <div class="list-count">${count} ${count === 1 ? "item" : "items"} · ${escHtml(category)}</div>
+			  <div class="list-count">${count} ${count === 1 ? "item" : "items"} · ${escHtml(category)}${category === "Cinema" ? statusSummary(list.items || []) : ""}</div>
 			</div>
 
 			<button class="icon-btn danger" aria-label="Delete list"
