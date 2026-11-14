@@ -34,8 +34,9 @@
 .hero-tabs { display: inline-flex; gap: 4px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 4px; margin: 2px 0 10px; }
 .hero-tabs button { border: 0; background: transparent; color: var(--muted, #9AA0AE); padding: 7px 14px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
 .hero-tabs button.is-on { background: var(--accent, #FFA62B); color: var(--ink, #1A1206); }
-.soon-item { display: flex; gap: 12px; align-items: center; }
-.soon-poster { width: 72px; height: 104px; border-radius: 10px; background: #2a2d36 center / cover no-repeat; flex: none; }
+.soon-item { display: flex; gap: 14px; align-items: center; }
+.soon-info { flex: 1; min-width: 0; }
+.soon-poster { width: 100px; height: 146px; border-radius: 12px; background: #2a2d36 center / cover no-repeat; flex: none; margin-left: auto; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .soon-kind { font-size: .7rem; letter-spacing: .12em; font-weight: 700; color: var(--muted, #9AA0AE); }
 .soon-title { font-size: 1.2rem; font-weight: 800; line-height: 1.15; margin: 3px 0 8px; }
 .soon-item .btn-accent { padding: 9px 14px; font-size: .85rem; }
@@ -780,10 +781,10 @@ let heroT = "pick", heroList = [], heroIdx = 0, heroTimer = null, heroHold = nul
     tonight.newList = heroList;
     var saved = savedMovieNames().has(f.title.toLowerCase());
     body.innerHTML = '<div class="soon-item">' +
-      '<div class="soon-poster"' + (f.poster ? ' style="background-image:url(\'' + escHtml(f.poster) + '\')"' : '') + '></div>' +
       '<div class="soon-info"><div class="soon-kind">' + (f.kind === "tv" ? "SERIES" : "FILM") + ' · ' + nfDateLabel(f.when) + '</div>' +
       '<div class="soon-title">' + escHtml(f.title) + '</div>' +
-      '<button type="button" class="btn-accent' + (saved ? ' saved' : '') + '" onclick="newFilmAdd(' + heroIdx + ', this)">' + (saved ? '✓ In your list' : '+ Add to list') + '</button></div></div>';
+      '<button type="button" class="btn-accent' + (saved ? ' saved' : '') + '" onclick="newFilmAdd(' + heroIdx + ', this)">' + (saved ? '✓ In your list' : '+ Add to list') + '</button></div>' +
+      '<div class="soon-poster"' + (f.poster ? ' style="background-image:url(\'' + escHtml(f.poster) + '\')"' : '') + '></div></div>';
   }
   function startHeroRotate() {
     stopHeroRotate();
