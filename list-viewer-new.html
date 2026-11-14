@@ -253,7 +253,7 @@
 			${Photos.thumbHtml(entry, '', "PhotoUI.openEntry('" + escHtml(entry.id) + "')")}
 			${content}
 
-			<button type="button" class="gv-more" aria-label="More">•••</button>
+			<button type="button" class="gv-more" aria-label="More">⋯</button>
 			<button class="check-btn action-btn ${entry.checked ? 'checked' : ''}"
 					data-id="${escHtml(entry.id)}"
 					aria-label="Mark as done"
@@ -263,24 +263,11 @@
 		  </div>
 
 		  <div class="button-group button-groups">
-
-			<a href="${googleSearchLink}" target="_blank" rel="noopener" class="icon-btn" aria-label="Search on Google">
-			  <img src="https://www.google.com/favicon.ico" alt="">
-			</a>
-
-			<a href="${googleMapsLink}" target="_blank" rel="noopener" class="icon-btn">📍 Map</a>
-
-			<button class="icon-btn" aria-label="Photos" onclick="PhotoUI.openEntry('${escHtml(entry.id)}')">📷</button>
-
-			<button class="icon-btn" aria-label="Share"
-					data-share="${escHtml(entrySummary)}"
-					onclick="SendCard.openSheet('e', '${escHtml(String(entry.id))}', this.dataset.label)" data-label="${escHtml(Share.nameOf(entry))}">🔗</button>
-
-			<button class="icon-btn" aria-label="Remove from list"
-					onclick="deleteItem(localStorage.getItem('currentList'), ${Number(entry.index)})">
-			  <i class="fa-solid fa-trash"></i>
-			</button>
-
+			<a href="${googleSearchLink}" target="_blank" rel="noopener" class="icon-btn" aria-label="Search on Google" title="Search"><img src="https://www.google.com/favicon.ico" alt=""></a>
+			<a href="${googleMapsLink}" target="_blank" rel="noopener" class="icon-btn" aria-label="Map" title="Map"><svg class="pui" aria-hidden="true"><use href="#pui-pin"/></svg></a>
+			<button class="icon-btn" aria-label="Photos" title="Photos" onclick="PhotoUI.openEntry('${escHtml(entry.id)}')"><svg class="pui" aria-hidden="true"><use href="#pui-cam"/></svg></button>
+			<button class="icon-btn" aria-label="Send to a friend" title="Send" data-label="${escHtml(Share.nameOf(entry))}" onclick="SendCard.openSheet('e', '${escHtml(String(entry.id))}', this.dataset.label)"><svg class="pui" aria-hidden="true"><use href="#pui-send"/></svg></button>
+			<button class="icon-btn danger" aria-label="Remove from list" title="Remove" onclick="deleteItem(localStorage.getItem('currentList'), ${Number(entry.index)})"><svg class="pui" aria-hidden="true"><use href="#pui-trash"/></svg></button>
 		  </div>
 
 		</li>
