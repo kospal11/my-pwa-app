@@ -711,6 +711,11 @@ a.icon-btn:hover { color: var(--text); }
 .t-round:active .t-circle { transform: scale(.92); }
 .t-ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .t-lbl { font-size: 0.72rem; font-weight: 800; }
+/* Decide Fast: circles scale with the phone width so they fit on narrow screens (52px from 390px up) */
+.tonight-btns { gap: 6px; }
+.tonight-card { padding-right: 14px; }
+.t-circle { width: clamp(40px, calc(26.7vw - 52.1px), 52px); height: clamp(40px, calc(26.7vw - 52.1px), 52px); }
+.t-lbl { font-size: 0.68rem; }
 .tonight-sheet-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; }
 .t-row { padding: 0 0 8px !important; overflow-x: auto; }
 .t-row .chip { height: 38px; padding: 0 14px; font-size: 0.85rem; }
