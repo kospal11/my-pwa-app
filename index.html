@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css?v=55">
+  <link rel="stylesheet" href="app.css?v=56">
   <script src="theme.js"></script>
   <script src="share.js"></script>
   <script src="photos.js"></script>
@@ -3874,8 +3874,26 @@ function jotCollapse(on) {
 		const subEl = document.createElement("span");
 		subEl.className = "recent-sub";
 		subEl.textContent = type === "Cinema" && entry.year ? [sub, entry.year].filter(Boolean).join(" · ") : sub;
+		meta.className = "recent-meta";
 		meta.appendChild(nameEl);
 		meta.appendChild(subEl);
+
+		// Food and Drinks: typographic poster (shows only while the card has no photo)
+		if (type === "Food" || type === "Drinks") {
+		  card.classList.add("recent-poster");
+		  const big = document.createElement("span");
+		  big.className = "rp-big"; big.setAttribute("aria-hidden", "true");
+		  big.textContent = (name.trim().charAt(0) || "?").toUpperCase();
+		  const rule = document.createElement("span"); rule.className = "rp-rule";
+		  const n = Math.max(0, Math.min(5, Math.round(Number(entry.Rating) || 0)));
+		  const foot = document.createElement("span"); foot.className = "rp-foot";
+		  const st = document.createElement("span"); st.className = "rp-stars"; st.textContent = "★".repeat(n) + "☆".repeat(5 - n);
+		  const bd = document.createElement("span"); bd.className = "rp-badge"; bd.textContent = entry.checked ? "Done" : "To try";
+		  foot.appendChild(st); foot.appendChild(bd);
+		  meta.insertBefore(rule, nameEl);
+		  meta.appendChild(foot);
+		  card.appendChild(big);
+		}
 
 		card.appendChild(tag);
 		card.appendChild(meta);

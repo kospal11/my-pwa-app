@@ -1,4 +1,4 @@
-const CACHE_NAME = "category-tracker-v15";  // bump this on every release so users get the new files
+const CACHE_NAME = "category-tracker-v16";  // bump this on every release so users get the new files
 
 const FILES_TO_CACHE = [
   "./",
