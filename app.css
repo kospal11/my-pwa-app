@@ -1211,6 +1211,22 @@ body[data-view="grid"] .entry-item .entry-header { display: block; width: 100%; 
 body[data-view="grid"] .entry-item .entry-header > .pthumb { width: 100% !important; height: auto !important; aspect-ratio: 2 / 3; border-radius: 12px; }
 body[data-view="grid"] .entry-item .entry-header > :not(.pthumb) { display: none; }
 body[data-view="grid"] .entry-item .button-groups { display: none; }
+/* Food & Drinks grid tiles without a photo: typographic poster */
+.pposter { display: none; }
+body[data-view="grid"] .pthumb.pposter-host:not(.has-photo):not(.is-poster) { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 0; overflow: hidden; }
+body[data-view="grid"] .pthumb.pposter-host:not(.has-photo):not(.is-poster) > .ic { display: none; }
+body[data-view="grid"] .pthumb.pposter-host:not(.has-photo):not(.is-poster) .pposter { display: flex; flex-direction: column; position: absolute; inset: 0; padding: 12px; color: #fff; text-align: left; }
+.pposter .pp-top { display: flex; justify-content: space-between; font-size: 8px; letter-spacing: .14em; font-weight: 700; opacity: .85; position: relative; z-index: 1; }
+.pposter .pp-big { position: absolute; right: -6px; bottom: -16px; font-size: 92px; font-weight: 800; line-height: 1; letter-spacing: -.06em; color: rgba(255,255,255,.14); pointer-events: none; }
+.pposter .pp-rule { height: 1px; background: rgba(255,255,255,.35); margin: 6px 0; position: relative; z-index: 1; }
+.pposter .pp-name { font-size: 14px; font-weight: 800; line-height: 1.1; position: relative; z-index: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pposter .pp-meta { font-size: 9.5px; opacity: .8; margin-top: 3px; position: relative; z-index: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pposter .pp-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 1; }
+.pposter .pp-stars { font-size: 11px; color: #ffa62b; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.pposter .pp-off { color: rgba(255,255,255,.3); }
+.pposter .pp-badge { font-size: 8px; border: 1px solid rgba(255,255,255,.45); border-radius: 999px; padding: 2px 6px; }
+body[data-view="grid"] .entry-item:has(.pthumb.pposter-host:not(.has-photo):not(.is-poster))::after { display: none; }
+
 body[data-view="grid"] .entry-item.menu-open .button-groups { display: flex; position: absolute; top: 36px; right: 0; width: auto; flex-direction: column; gap: 4px; background: var(--surface); padding: 6px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.35); z-index: 5; }
 body[data-view="grid"] .entry-item::after { content: attr(data-name); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 5px; font-size: 0.72rem; font-weight: 700; line-height: 1.2; color: var(--fg); }
 body[data-view="grid"] .gv-more { display: flex; position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; font-weight: 900; align-items: center; justify-content: center; z-index: 4; }

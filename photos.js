@@ -253,11 +253,37 @@
 
   var ICON = { Food: "i-food", Drinks: "i-cup", Cinema: "i-film", Other: "i-list" };
   // Square thumbnail (shows the cover photo, or a coloured placeholder with the category icon).
+  function escP(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  // Typographic poster shown in grid view for Food and Drinks when there is no photo
+  function posterHtml(e) {
+    var t = e.type;
+    if (t !== "Food" && t !== "Drinks") return "";
+    var name = String(e.placeName || "").trim();
+    var letter = (name.charAt(0) || "?").toUpperCase();
+    var sub = t === "Food" ? (e.cuisineType || "") : (e.drinkType || "");
+    var n = Math.max(0, Math.min(5, Math.round(Number(e.Rating) || 0)));
+    var stars = "";
+    for (var i = 1; i <= 5; i++) stars += i <= n ? "★" : '<span class="pp-off">★</span>';
+    return '<div class="pposter" aria-hidden="true">' +
+      '<div class="pp-top"><span>' + (t === "Food" ? "FOOD" : "DRINKS") + '</span></div>' +
+      '<div class="pp-big">' + escP(letter) + '</div>' +
+      '<div class="pp-rule"></div>' +
+      '<div class="pp-name">' + escP(name) + '</div>' +
+      '<div class="pp-meta">' + escP(sub) + '</div>' +
+      '<div class="pp-foot"><span class="pp-stars">' + stars + '</span>' +
+      '<span class="pp-badge">' + (e.checked ? "Done" : "To try") + '</span></div>' +
+      '</div>';
+  }
   function thumbHtml(entry, extraClass, onclick) {
     var t = entry.type || "Other";
-    return '<div class="pthumb ph-' + t.toLowerCase() + ' ' + (extraClass || "") + '" data-photo-for="' + String(entry.id).replace(/"/g, "") + '"' +
+    var host = (t === "Food" || t === "Drinks") ? " pposter-host" : "";
+    return '<div class="pthumb ph-' + t.toLowerCase() + host + ' ' + (extraClass || "") + '" data-photo-for="' + String(entry.id).replace(/"/g, "") + '"' +
       (onclick ? ' onclick="' + onclick + '" role="button" tabindex="0"' : "") + '>' +
-      '<svg class="ic" aria-hidden="true"><use href="#' + (ICON[t] || "i-list") + '"/></svg></div>';
+      '<svg class="ic" aria-hidden="true"><use href="#' + (ICON[t] || "i-list") + '"/></svg>' + posterHtml(entry) + '</div>';
   }
 
   window.Photos = {
