@@ -1242,6 +1242,13 @@ body[data-view="grid"] .pthumb.pposter-host:not(.has-photo):not(.is-poster) .ppo
 .pposter .pp-stars { font-size: 11px; color: #ffa62b; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
 .pposter .pp-off { color: rgba(255,255,255,.3); }
 .pposter .pp-badge { font-size: 8px; border: 1px solid rgba(255,255,255,.45); border-radius: 999px; padding: 2px 6px; }
+.pposter .pp-items { flex: 1; min-height: 0; overflow: hidden; margin-top: 4px; font-size: 9.5px; line-height: 1.35; position: relative; z-index: 1; }
+.pposter .pp-items div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pposter .pp-items.dense { font-size: 8.2px; line-height: 1.25; }
+.pposter .pp-more { opacity: .7; }
+.pposter .pp-items.cols { column-count: 2; column-gap: 8px; }
+.pposter .pp-badge { white-space: nowrap; }
+.pposter .pp-foot.pp-tight .pp-stars { font-size: 9px; letter-spacing: -1px; }
 body[data-view="grid"] .entry-item:has(.pthumb.pposter-host:not(.has-photo):not(.is-poster))::after { display: none; }
 
 body[data-view="grid"] .entry-item.menu-open .button-groups { display: flex; position: absolute; top: 36px; right: 0; width: auto; flex-direction: column; gap: 4px; background: var(--surface); padding: 6px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.35); z-index: 5; }

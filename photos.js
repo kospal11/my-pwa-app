@@ -259,8 +259,34 @@
     });
   }
   // Typographic poster shown in grid view for Food and Drinks when there is no photo
+  // Other: a list shows all its items on the card (up to 12, then "+N more"); a note shows its title
+  function otherPosterHtml(e) {
+    var isList = e.otherType === "List" && Array.isArray(e.items);
+    var name = String(e.otherName || "").trim();
+    var letter = (name.charAt(0) || "?").toUpperCase();
+    var items = isList ? e.items : [];
+    var done = items.filter(function (i) { return i && i.done; }).length;
+    var list = "";
+    if (isList) {
+      list = '<div class="pp-items' + (items.length > 5 ? " dense" : "") + (items.length > 8 ? " cols" : "") + '">' +
+        items.slice(0, 12).map(function (i) { return "<div>" + (i && i.done ? "☑ " : "☐ ") + escP(i && i.t) + "</div>"; }).join("") +
+        (items.length > 12 ? '<div class="pp-more">+' + (items.length - 12) + " more</div>" : "") + "</div>";
+    }
+    var n = Math.max(0, Math.min(5, Math.round(Number(e.Rating) || 0)));
+    var stars = "";
+    for (var i = 1; i <= 5; i++) stars += i <= n ? "★" : '<span class="pp-off">★</span>';
+    return '<div class="pposter" aria-hidden="true">' +
+      '<div class="pp-top"><span>OTHER</span><span>' + (isList ? "LIST" : "NOTE") + '</span></div>' +
+      '<div class="pp-big">' + escP(letter) + '</div>' +
+      '<div class="pp-rule"></div>' +
+      '<div class="pp-name">' + escP(name) + '</div>' + list +
+      '<div class="pp-foot pp-tight"><span class="pp-stars">' + stars + '</span>' +
+      '<span class="pp-badge">' + (isList ? done + "/" + items.length : (e.checked ? "Done" : "To try")) + '</span></div>' +
+      '</div>';
+  }
   function posterHtml(e) {
     var t = e.type;
+    if (t === "Other") return otherPosterHtml(e);
     if (t !== "Food" && t !== "Drinks") return "";
     var name = String(e.placeName || "").trim();
     var letter = (name.charAt(0) || "?").toUpperCase();
@@ -280,7 +306,7 @@
   }
   function thumbHtml(entry, extraClass, onclick) {
     var t = entry.type || "Other";
-    var host = (t === "Food" || t === "Drinks") ? " pposter-host" : "";
+    var host = (t === "Food" || t === "Drinks" || t === "Other") ? " pposter-host" : "";
     return '<div class="pthumb ph-' + t.toLowerCase() + host + ' ' + (extraClass || "") + '" data-photo-for="' + String(entry.id).replace(/"/g, "") + '"' +
       (onclick ? ' onclick="' + onclick + '" role="button" tabindex="0"' : "") + '>' +
       '<svg class="ic" aria-hidden="true"><use href="#' + (ICON[t] || "i-list") + '"/></svg>' + posterHtml(entry) + '</div>';
