@@ -33,6 +33,11 @@
 <style id="hero-soon-css">
 #movieSuggestion { min-height: 70px; }
 .hero-actions { height: 48px; }
+.set-grp-title { font-size: .7rem; letter-spacing: .14em; font-weight: 700; opacity: .6; margin: 14px 4px 6px; }
+.set-group { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 6px; }
+.set-group .btn { display: block !important; width: 100% !important; border-radius: 12px !important; margin: 0 !important; border: 1px solid rgba(255,255,255,.1) !important; }
+.set-group .btn + .btn, .set-group .btn + input + .btn { margin-top: 6px !important; }
+.set-group .set-row { padding: 6px 8px; }
 .hero-tabs { display: inline-flex; gap: 4px; background: rgba(255,255,255,.08); border-radius: 999px; padding: 4px; margin: 2px 0 0; }
 .hero { min-height: 236px; }
 .hero:has(#heroSoon:not([style*="none"])) .hero-body { display: flex; flex-direction: column; }
@@ -359,33 +364,52 @@
     <div class="sheet-grabber"></div>
     <div class="sheet-head"><h4>More</h4></div>
 
-    <button class="btn btn-success w-100 mb-2" onclick="window.location.href='pchat.html'">🔒 Private chat (no server)</button>
-    <button class="btn btn-success w-100 mb-2" onclick="window.location.href='chat.html'">Chat</button>
-    <button class="btn btn-info w-100 mb-2" onclick="window.location.href='bills.html'">Bills</button>
-    <button class="btn btn-info w-100 mb-2" onclick="window.location.href='stats.html'">Statistics</button>
-    <button class="btn btn-info w-100 mb-2" onclick="openBulkPosters()">Find posters for all movies</button>
-    <button class="btn btn-info w-100 mb-2" onclick="addYearsNow()">Add release years to movies</button>
-    <button class="btn btn-info w-100 mb-2" onclick="toggleToolsPanel(); SendCard.openPaste()">Add from a friend's message</button>
-    <button class="btn btn-info w-100 mb-2" onclick="toggleToolsPanel(); SendCard.openFile()">Add places from a file (keeps yours)</button>
-    <button class="btn btn-info w-100 mb-2" onclick="testNotification()">Test notification</button>
-    <button class="btn btn-info w-100 mb-2" onclick="testLookup()">Test movie lookup</button>
-    <button class="btn btn-info w-100 mb-2" onclick="toggleToolsPanel(); openCreateListPanel()">New list</button>
-    <button class="btn btn-info w-100 mb-2" onclick="exportEntries()">Export entries</button>
-    <button class="btn btn-info w-100 mb-2" onclick="exportAllData()">Export lists</button>
+    <div class="set-grp-title">YOUR STUFF</div>
+    <div class="set-group">
+      <button class="btn btn-success w-100 mb-2" onclick="window.location.href='pchat.html'">🔒 Private chat (no server)</button>
+      <button class="btn btn-success w-100 mb-2" onclick="window.location.href='chat.html'">Chat</button>
+      <button class="btn btn-info w-100 mb-2" onclick="window.location.href='bills.html'">Bills</button>
+      <button class="btn btn-info w-100 mb-2" onclick="window.location.href='stats.html'">Statistics</button>
+    </div>
 
-    <input type="file" id="importEntriesFile" accept=".json" style="display:none;">
-    <button class="btn btn-info w-100 mb-2" onclick="triggerFileImport()">Import entries</button>
+    <div class="set-grp-title">LISTS &amp; PLACES</div>
+    <div class="set-group">
+      <button class="btn btn-info w-100 mb-2" onclick="toggleToolsPanel(); openCreateListPanel()">New list</button>
+      <button class="btn btn-info w-100 mb-2" onclick="openBulkPosters()">Find posters for all movies</button>
+      <button class="btn btn-info w-100 mb-2" onclick="addYearsNow()">Add release years to movies</button>
+      <button class="btn btn-info w-100 mb-2" onclick="toggleToolsPanel(); SendCard.openPaste()">Add from a friend's message</button>
+      <button class="btn btn-info w-100 mb-2" onclick="toggleToolsPanel(); SendCard.openFile()">Add places from a file (keeps yours)</button>
+    </div>
 
-    <input type="file" id="importListsFile" accept=".json" style="display:none;">
-    <button class="btn btn-info w-100 mb-2" onclick="triggerFullImport()">Import lists</button>
+    <div class="set-grp-title">DATA</div>
+    <div class="set-group">
+      <button class="btn btn-info w-100 mb-2" onclick="exportEntries()">Export entries</button>
+      <button class="btn btn-info w-100 mb-2" onclick="exportAllData()">Export lists</button>
+      <input type="file" id="importEntriesFile" accept=".json" style="display:none;">
+      <button class="btn btn-info w-100 mb-2" onclick="triggerFileImport()">Import entries</button>
+      <input type="file" id="importListsFile" accept=".json" style="display:none;">
+      <button class="btn btn-info w-100 mb-2" onclick="triggerFullImport()">Import lists</button>
+    </div>
 
-    <div class="set-row"><span style="font-weight:700">Daily note · reminder at</span>
-      <span style="display:flex;align-items:center;gap:8px">
-        <input type="time" id="jotTimeInput" class="bl-input" style="width:auto;height:38px" onchange="jotSettingsChanged()">
-        <input type="checkbox" id="jotOn" class="form-check-input" style="width:2.2em;height:1.2em" onchange="jotSettingsChanged()">
-      </span></div>
+    <div class="set-grp-title">REMINDERS</div>
+    <div class="set-group">
+      <div class="set-row"><span style="font-weight:700">Daily note · reminder at</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <input type="time" id="jotTimeInput" class="bl-input" style="width:auto;height:38px" onchange="jotSettingsChanged()">
+          <input type="checkbox" id="jotOn" class="form-check-input" style="width:2.2em;height:1.2em" onchange="jotSettingsChanged()">
+        </span></div>
+    </div>
 
-    <div id="themePicker"></div>
+    <div class="set-grp-title">APPEARANCE</div>
+    <div class="set-group">
+      <div id="themePicker"></div>
+    </div>
+
+    <div class="set-grp-title">TESTING</div>
+    <div class="set-group">
+      <button class="btn btn-info w-100 mb-2" onclick="testNotification()">Test notification</button>
+      <button class="btn btn-info w-100 mb-2" onclick="testLookup()">Test movie lookup</button>
+    </div>
   </div>
 
   <!-- Add entry sheet -->
