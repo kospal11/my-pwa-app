@@ -22,10 +22,22 @@
   <script src="list-sheet.js"></script>
 <script src="back.js"></script>
 <script src="weather.js"></script>
-<script src="lookup.js"></script>
+<script src="lookup.js?v=2"></script>
   <script src="photo-ui.js"></script>
   <script src="sendcard.js"></script>
 <script src="athens-seed.js"></script>
+<script>
+// Keep "Recently added" up to date: refresh it whenever entries or lists are written
+(function () {
+  var orig = Storage.prototype.setItem, t = null;
+  Storage.prototype.setItem = function (k) {
+    orig.apply(this, arguments);
+    if ((k === "entries" || k === "lists") && typeof window.renderRecent === "function") {
+      clearTimeout(t); t = setTimeout(function () { try { window.renderRecent(); } catch (e) {} }, 60);
+    }
+  };
+})();
+</script>
   <script src="bills-core.js"></script>
 
   <link rel="manifest" href="manifest.json">

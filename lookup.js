@@ -290,18 +290,32 @@
     var queue = bulkCandidates(entries, !!opts.includeMissed), total = queue.length, i = 0, done = 0, found = 0, nomatch = 0, errRun = 0;
     var delay = opts.delay == null ? 250 : opts.delay, stopped = false, reason = "finished";
     function report(cur) { if (opts.onProgress) { try { opts.onProgress({ done: done, total: total, found: found, nomatch: nomatch, current: cur || "" }); } catch (e) {} } }
-    function one(c) {
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    // wait while the phone reports it is offline (resumes on "online"), at most 30 s
+    function waitOnline() {
+      return new Promise(function (res) {
+        if (typeof navigator === "undefined" || navigator.onLine !== false) return res();
+        var h = function () { window.removeEventListener("online", h); res(); };
+        window.addEventListener("online", h);
+        setTimeout(function () { window.removeEventListener("online", h); res(); }, 30000);
+      });
+    }
+    // one attempt; a failed lookup is retried a few times with a growing pause before it is skipped
+    function attempt(c, n) {
       var p = c.kind === "tv" ? tvmaze(splitYear(c.name).name, 6) : wiki(splitYear(c.name).name, 12, c.year || splitYear(c.name).year);
-      return withTimeout(p, 12000).then(function (list) {
+      return waitOnline().then(function () { return withTimeout(p, 20000); }).then(function (list) {
         errRun = 0;
         var hit = pickExact(c.name, list, c.year);
         if (hit) { set(c.id, hit, true); found++; }
         else { miss[c.id] = Date.now(); persist(c.id, { m: miss[c.id] }); nomatch++; }
       }, function () {
         errRun++;
-        if (errRun >= 6) { stopped = true; reason = "connection"; }
-      }).then(function () { done++; });
+        if (errRun >= 40) { stopped = true; reason = "connection"; return; }
+        if (n < 3 && !stopped) return sleep(2000 * Math.pow(2, n)).then(function () { return attempt(c, n + 1); });
+        // skipped for now: not remembered as "no match", so a later run tries it again
+      });
     }
+    function one(c) { return attempt(c, 0).then(function () { done++; }); }
     function worker() {
       function next() {
         if (stopped || i >= queue.length) return Promise.resolve();
