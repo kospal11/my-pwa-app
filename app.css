@@ -1126,7 +1126,7 @@ textarea.bl-input { height: 72px; padding: 10px 14px; resize: none; }
 .mp-chips { display:flex; gap:6px; width:100%; } .mp-chips .chip { height:34px; font-size:.82rem; background:var(--surface-2); }
 .mp-chips .chip.is-active { background:var(--accent); color:var(--ink); }
 .mp-map { position:relative; flex:1; min-height:200px; overflow:hidden; background:#0e1116; touch-action:none; user-select:none; -webkit-user-select:none; }
-.mp-tiles { position:absolute; inset:0; overflow:hidden; } .mp-t { position:absolute; left:0; top:0; max-width:none; pointer-events:none; }
+.mp-tiles { position:absolute; inset:0; overflow:visible; } .mp-t { position:absolute; left:0; top:0; max-width:none; pointer-events:none; }
 .mp-cv { position:absolute; left:0; top:0; }
 .mp-zoom { position:absolute; right:10px; top:10px; display:flex; flex-direction:column; gap:8px; z-index:3; }
 .mp-zoom button { width:42px; height:42px; border-radius:12px; border:0; background:var(--surface); color:var(--text); font-size:1.3rem; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.4); }

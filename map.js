@@ -11,7 +11,7 @@
   // ---------- tiny slippy map ----------
   function Mini(el) {
     var self = this, W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 3);
-    self.lat = ATHENS.lat; self.lng = ATHENS.lng; self.z = 13; self.pts = []; self.me = null; self.sel = null; self.onTap = null;
+    self.lat = ATHENS.lat; self.lng = ATHENS.lng; self.z = 13; self.bearing = 0; self.onRot = null; self.pts = []; self.me = null; self.sel = null; self.onTap = null;
     var tiles = document.createElement("div"); tiles.className = "mp-tiles";
     var cv = document.createElement("canvas"); cv.className = "mp-cv";
     el.appendChild(tiles); el.appendChild(cv);
@@ -20,8 +20,11 @@
     function wy(lat, s) { var r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s; }
     function unx(x, s) { return x / s * 360 - 180; }
     function uny(y, s) { var n = Math.PI - 2 * Math.PI * y / s; return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))); }
-    self.toPx = function (lat, lng) { var s = 256 * Math.pow(2, self.z); return [wx(lng, s) - wx(self.lng, s) + W / 2, wy(lat, s) - wy(self.lat, s) + H / 2]; };
-    self.fromPx = function (px, py) { var s = 256 * Math.pow(2, self.z); return { lat: uny(wy(self.lat, s) + (py - H / 2), s), lng: unx(wx(self.lng, s) + (px - W / 2), s) }; };
+    // the map turns by self.bearing (degrees, clockwise) around the middle of the screen
+    function rotv(x, y) { var t = self.bearing * Math.PI / 180, c = Math.cos(t), sn = Math.sin(t); return [x * c - y * sn, x * sn + y * c]; }
+    function unrotv(x, y) { var t = self.bearing * Math.PI / 180, c = Math.cos(t), sn = Math.sin(t); return [x * c + y * sn, -x * sn + y * c]; }
+    self.toPx = function (lat, lng) { var s = 256 * Math.pow(2, self.z), r = rotv(wx(lng, s) - wx(self.lng, s), wy(lat, s) - wy(self.lat, s)); return [r[0] + W / 2, r[1] + H / 2]; };
+    self.fromPx = function (px, py) { var s = 256 * Math.pow(2, self.z), v = unrotv(px - W / 2, py - H / 2); return { lat: uny(wy(self.lat, s) + v[1], s), lng: unx(wx(self.lng, s) + v[0], s) }; };
     self.size = function () { W = el.clientWidth; H = el.clientHeight; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px"; self.draw(); };
     function url(x, y, z) {
       var n = Math.pow(2, z); x = ((x % n) + n) % n;
@@ -30,7 +33,9 @@
     self.draw = function () {
       if (!W) return;
       var tz = Math.max(2, Math.min(19, Math.round(self.z) + (dpr > 1.5 ? 1 : 0))), f = Math.pow(2, self.z - tz), s = 256 * Math.pow(2, self.z), ts = 256 * f;
-      var cx = wx(self.lng, s), cy = wy(self.lat, s), x0 = Math.floor((cx - W / 2) / ts), x1 = Math.floor((cx + W / 2) / ts), y0 = Math.floor((cy - H / 2) / ts), y1 = Math.floor((cy + H / 2) / ts), keep = {};
+      var rot = Math.abs(self.bearing) > 0.01, hw = rot ? Math.hypot(W, H) / 2 : W / 2, hh = rot ? hw : H / 2;   // a turned map needs tiles out to the corners
+      tiles.style.transform = rot ? "rotate(" + self.bearing + "deg)" : "";
+      var cx = wx(self.lng, s), cy = wy(self.lat, s), x0 = Math.floor((cx - hw) / ts), x1 = Math.floor((cx + hw) / ts), y0 = Math.floor((cy - hh) / ts), y1 = Math.floor((cy + hh) / ts), keep = {};
       var max = Math.pow(2, tz);
       for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) {
         if (y < 0 || y >= max) continue;
@@ -58,8 +63,19 @@
         ctx.beginPath(); ctx.arc(p[0], p[1], 16, 0, 6.2832); ctx.fillStyle = "rgba(66,133,244,.22)"; ctx.fill();
         ctx.beginPath(); ctx.arc(p[0], p[1], 7, 0, 6.2832); ctx.fillStyle = "#4285f4"; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = "#fff"; ctx.stroke();
       }
+      if (self.onRot) self.onRot(self.bearing);
     };
-    self.pan = function (dx, dy) { var s = 256 * Math.pow(2, self.z); self.lng = unx(wx(self.lng, s) - dx, s); self.lat = Math.max(-80, Math.min(80, uny(wy(self.lat, s) - dy, s))); };
+    function normBear(b) { return ((b + 180) % 360 + 360) % 360 - 180; }
+    // ease the map back to north (the compass button)
+    self.north = function () {
+      var from = self.bearing, t0 = performance.now(), dur = 250;
+      (function step(now) {
+        var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        self.bearing = k < 1 ? from - from * e : 0; self.draw();
+        if (k < 1) requestAnimationFrame(step);
+      })(t0);
+    };
+    self.pan = function (dx, dy) { var s = 256 * Math.pow(2, self.z), v = unrotv(dx, dy); self.lng = unx(wx(self.lng, s) - v[0], s); self.lat = Math.max(-80, Math.min(80, uny(wy(self.lat, s) - v[1], s))); };
     self.zoomAt = function (nz, px, py) {
       nz = Math.max(3, Math.min(18.5, nz)); if (nz === self.z) return;
       var s0 = 256 * Math.pow(2, self.z), s1 = 256 * Math.pow(2, nz);
@@ -88,7 +104,7 @@
       try { el.setPointerCapture(e.pointerId); } catch (x) {}
       ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
       if (Object.keys(ptr).length === 1) { moved = 0; t0 = Date.now(); }
-      var t = two(); last = t ? { d: Math.hypot(t[0].x - t[1].x, t[0].y - t[1].y) } : null;
+      var t = two(); last = t ? { d: Math.hypot(t[0].x - t[1].x, t[0].y - t[1].y), a: Math.atan2(t[1].y - t[0].y, t[1].x - t[0].x) } : null;
     });
     el.addEventListener("pointermove", function (e) {
       var p = ptr[e.pointerId]; if (!p) return;
@@ -99,6 +115,10 @@
         var d = Math.hypot(t[0].x - t[1].x, t[0].y - t[1].y), mx = (t[0].x + t[1].x) / 2 - r.left, my = (t[0].y + t[1].y) / 2 - r.top;
         if (last.d > 0 && d > 0) self.zoomAt(self.z + Math.log2(d / last.d), mx, my);
         self.pan(((t[0].x + t[1].x) - (o[0].x + o[1].x)) / 2, ((t[0].y + t[1].y) - (o[0].y + o[1].y)) / 2);
+        // two fingers turning = turning the map
+        var an = Math.atan2(t[1].y - t[0].y, t[1].x - t[0].x);
+        if (last.a !== undefined) { var da = an - last.a; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI; self.bearing = normBear(self.bearing + da * 180 / Math.PI); }
+        last.a = an;
         last.d = d; moved = 99; redraw(); return;
       }
       var dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
@@ -414,7 +434,7 @@
     var d = document.createElement("div"); d.id = "mpScreen"; d.className = "mp-screen";
     d.innerHTML = '<div class="mp-top"><button type="button" class="mp-back" id="mpBack" aria-label="Back"><svg class="ic" style="width:20px;height:20px"><use href="#i-back"/></svg></button><div class="mp-title">Map</div><button type="button" class="mp-search-btn" id="mpSearchBtn" aria-label="Search a place"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>' +
       '<div class="mp-chips"><button type="button" class="chip is-active" id="mpFood">Food</button><button type="button" class="chip is-active" id="mpDrinks">Drinks</button><button type="button" class="chip" id="mpTodo">Not visited</button><button type="button" class="chip" id="mpGuide">Guide</button></div></div>' +
-      '<div class="mp-map" id="mpMap"><div class="mp-ui mp-zoom"><button type="button" id="mpIn" aria-label="Zoom in">+</button><button type="button" id="mpOut" aria-label="Zoom out">−</button><button type="button" id="mpMe" aria-label="My location">◎</button></div>' +
+      '<div class="mp-map" id="mpMap"><div class="mp-ui mp-zoom"><button type="button" id="mpIn" aria-label="Zoom in">+</button><button type="button" id="mpOut" aria-label="Zoom out">−</button><button type="button" id="mpMe" aria-label="My location">◎</button><button type="button" id="mpNorth" class="mp-north" aria-label="Point north" style="display:none"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2 L18 16 L12 12.5 L6 16 Z" fill="#ff5c5c"/></svg></button></div>' +
       '<div class="mp-attr">© OpenStreetMap contributors</div><div class="mp-float" id="mpFloat"></div></div>' +
       '<div class="mp-bottom"><div class="mp-grip" id="mpGrip" role="button" aria-label="Show or hide the list"></div><div class="mp-status" id="mpStatus"></div><div id="mpLoc"></div><div id="mpCard"></div><div id="mpNear"></div></div>' + '<button type="button" class="mp-pill" id="mpPill">Near you</button><div class="mp-sp" id="mpSP"><div class="mp-sbar"><input id="mpQ" type="search" placeholder="Find a place by name" autocomplete="off"><button type="button" id="mpSCancel">Cancel</button></div><div id="mpSRes"></div></div>';
     document.body.appendChild(d);
@@ -424,6 +444,7 @@
     $("mpGuide").onclick = function () { st.guide = !st.guide; this.classList.toggle("is-active", st.guide); refresh(false); };
     $("mpTodo").onclick = function () { st.todo = !st.todo; this.classList.toggle("is-active", st.todo); refresh(false); };
     $("mpIn").onclick = function () { st.map.zoomBy(1); }; $("mpOut").onclick = function () { st.map.zoomBy(-1); };
+    $("mpNorth").onclick = function () { st.map.north(); };
     $("mpMe").onclick = function () { locate(true); };
     (function () {   // drag the sheet from its header; the list moves it until full size, then scrolls
       var sheet = document.querySelector("#mpScreen .mp-bottom"), grip = $("mpGrip"), drag = null;
@@ -470,6 +491,7 @@
     // taps on the card must not reach the map (a tap there clears the selection and removes the buttons)
     ["pointerdown", "pointerup", "pointermove", "wheel", "dblclick"].forEach(function (t) { $("mpFloat").addEventListener(t, function (ev) { ev.stopPropagation(); }); });
     st.map = new Mini($("mpMap"));
+    st.map.onRot = function (b) { var n = $("mpNorth"); if (!n) return; n.style.display = Math.abs(b) > 0.5 ? "" : "none"; var sv = n.querySelector("svg"); if (sv) sv.style.transform = "rotate(" + b + "deg)"; };
     st.map.onMove = function () { loadNearby({ lat: st.map.lat, lng: st.map.lng }); placeFloat(); };
     st.map.onTap = function (x, y) {
       if (st.pickMe) { var ll = st.map.fromPx(x, y); st.pickMe = false; setMe(ll.lat, ll.lng, "set"); try { localStorage.setItem("mapMe", JSON.stringify({ lat: ll.lat, lng: ll.lng, t: Date.now() })); } catch (e) {} return; }
