@@ -616,7 +616,8 @@
     if (src === "gps") { try { localStorage.setItem("mapMe", JSON.stringify({ lat: la, lng: ln })); } catch (e) {} }
     if (src === "gps") locNote(""); else locNote('Using the position you set. <button type="button" id="mpLocRetry" class="mp-retry">Try GPS</button>');
     if (st.map) { st.map.me = st.me; frame(); }
-    if (st.tonightSrc && !st.tonightSrc.fromMe) pickTonight(false);
+    // re-pick if there was no position before, or if the precise fix is far from the spot the pick was made from
+    if (st.tonightSrc && (!st.tonightSrc.fromMe || (src === "gps" && st.tonightFrom && dist(st.tonightFrom, st.me) > 300))) pickTonight(false);
     near(); card();
   }
   function pickMe() { st.pickMe = true; setSheet("small"); locNote("Tap the map where you are."); }
@@ -626,7 +627,7 @@
     var cap = null; try { cap = C && C.Plugins && C.Plugins.Geolocation; } catch (e) {}
     var hasPlugin = !!(C && C.isPluginAvailable ? C.isPluginAvailable("Geolocation") : cap);
     var done = function (p) { setMe(p.coords.latitude, p.coords.longitude, "gps"); };
-    // "near you" only needs a rough position, so take the quick (network or cached) fix instead of waiting for a precise GPS lock
+    // the pick does not wait for this: it is already on screen from the saved position, and this updates it
     var fail = function (err) {
       var m = String((err && (err.message || err.code)) || "");
       var tip = native && !hasPlugin && /denied|permission/i.test(m) ? "Location is blocked for this app. Check the manifest lines are in, then allow Location in Android Settings › Apps › My Cat App › Permissions."
@@ -645,12 +646,12 @@
       Promise.resolve(cap.checkPermissions ? cap.checkPermissions().catch(function () { return {}; }) : {}).then(function (p) {
         if (p && p.location === "granted") return;
         return cap.requestPermissions ? cap.requestPermissions().then(function (q) { if (q && q.location === "denied") throw new Error("permission denied"); }) : 0;
-      }).then(function () { return cap.getCurrentPosition({ enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }); }).then(done, fail);
+      }).then(function () { return cap.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }); }).then(done, fail);
     } else if (navigator.geolocation) {
       // without the plugin the app's web view can still ask Android for location (needs the manifest lines)
       navigator.geolocation.getCurrentPosition(done, function (err) {
         if (native && !hasPlugin) fail({ message: (err && err.message ? err.message + " — " : "") + "no plugin" }); else fail(err);
-      }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
+      }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
     } else fail();
   }
   // Tonight's pick: an unvisited place near you, from your own places and the guide, shown on the map
@@ -664,6 +665,7 @@
   function pickTonight(again) {
     if (!st.map) return;
     var from = st.me || { lat: st.map.lat, lng: st.map.lng };
+    st.tonightFrom = from;
     var pool = tonightPool(from), list = pool.list;
     if (again && lastPick) { var rest = list.filter(function (p) { return p.id !== lastPick.id; }); if (rest.length) list = rest; }
     if (!list.length) { st.tonightSrc = null; st.sel = null; st.map.sel = null; st.map.draw(); locNote("Nothing unvisited nearby yet. Try a bigger distance."); card(); return; }
